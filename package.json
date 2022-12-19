@@ -1,0 +1,31 @@
+{
+  "name": "cornsol",
+  "version": "1.0.0",
+  "description": "pretty console formatter",
+  "main": "dist/index.js",
+  "repository": "https://github.com/ahas/cornsol",
+  "author": "ahas",
+  "license": "MIT",
+  "private": true,
+  "keywords": [
+    "pretty",
+    "formatted",
+    "console"
+  ],
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node test/index.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "sprintf-js": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.17",
+    "@types/sprintf-js": "^1.1.2",
+    "typescript": "^4.9.4"
+  }
+}
