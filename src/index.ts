@@ -296,7 +296,7 @@ export function printStepSync<T = void>(stepName: string, stepFunction: () => T)
 export async function printGroup<T = void>(
   stepFunction: () => T | Promise<T>,
   open?: () => void | Promise<void>,
-  close?: () => void | Promise<void>,
+  close?: () => void | Promise<void>
 ): Promise<T> {
   await openPrintGroup(open);
 
@@ -339,15 +339,13 @@ export function printArraySync(fn: (msg: any, ...params: any[]) => void, message
   if (messages.length === 1) {
     fn(messages[0]);
   } else {
-    printGroupSync(() => {
-      openPrintGroupSync(() => fn(messages[1]));
+    openPrintGroupSync(() => fn(messages[1]));
 
-      for (let i = 1; i < messages.length - 1; i++) {
-        fn(messages[i]);
-      }
+    for (let i = 1; i < messages.length - 1; i++) {
+      fn(messages[i]);
+    }
 
-      closePrintGroupSync(() => fn(messages[messages.length - 1]));
-    });
+    closePrintGroupSync(() => fn(messages[messages.length - 1]));
   }
 }
 
