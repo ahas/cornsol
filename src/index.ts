@@ -320,16 +320,14 @@ export function printGroupSync<T = void>(stepFunction: () => T, open?: () => voi
 export async function printArray(fn: (msg: any, ...params: any[]) => void, messages: any[]): Promise<void> {
   if (messages.length === 1) {
     fn(messages[0]);
-  } else {
-    await printGroup(async () => {
-      await openPrintGroup(() => fn(messages[1]));
+  } else if (messages.length >= 2) {
+    await openPrintGroup(() => fn(messages[0]));
 
-      for (let i = 1; i < messages.length - 1; i++) {
-        fn(messages[i]);
-      }
+    for (let i = 1; i < messages.length - 1; i++) {
+      fn(messages[i]);
+    }
 
-      await closePrintGroup(() => fn(messages[messages.length - 1]));
-    });
+    await closePrintGroup(() => fn(messages[messages.length - 1]));
   }
 }
 

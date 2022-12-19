@@ -8,6 +8,7 @@ const {
   closePrintGroupSync,
   printGroupSync,
   configure,
+  printArray,
   ...cornsol
 } = require("../dist");
 
@@ -116,6 +117,8 @@ printGroupSync(
     () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`),
     () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`),
   );
+
+  await printArray(console.log, ["Item 1", "Item 2"]);
 
   console.log("Customize test");
   configure({
