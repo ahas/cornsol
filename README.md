@@ -4,7 +4,6 @@
 - [Installation](#installation)
 - [Cautions](#cautions)
 - [Usage](#usage)
-  - [Default styles](#default-styles)
   - [Register globally](#register-globally)
   - [Print group](#print-group)
   - [Print array](#print-array)
@@ -57,18 +56,6 @@ import * as cornsol from "cornsol";
 
 cornsol.register();
 ```
-
-## Default styles
-
-<font color="grey">➤</font> 0000: ─ console.log
-
-<font color="red">➤</font> 0001: ─ console.error
-
-<font color="blue">➤</font> 0002: ─ console.info
-
-<font color="yellow">➤</font> 0003: ─ console.warn
-
-<font color="purple">➤</font> 0004: ─ console.debug
 
 ## Print group
 
