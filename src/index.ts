@@ -157,26 +157,23 @@ function clearSpinner() {
   _spinnerInterval && clearInterval(_spinnerInterval);
 }
 
+function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(_settings.formatters.print(getContext({ logType }), msg, ...params));
+}
+
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
   if (_isGroupEnabled && _groupLineNo > 0 && !_isGroupEnd) {
-    if (_settings.isSpinning) {
-      clearSpinner();
-    }
-
+    _settings.isSpinning && clearSpinner();
     _lastPrintText = _settings.formatters.print(getContext({ logType }), msg, ...params);
     _spinnerIndex = 0;
     _settings.isSpinning = true;
 
-    _spinnerInterval = setInterval(() => {
-      process.stdout.clearLine(0);
-      process.stdout.cursorTo(0);
-      process.stdout.write(_settings.formatters.print(getContext({ logType }), msg, ...params));
-    }, 100);
+    updateSpinner(logType, msg, ...params);
+    _spinnerInterval = setInterval(() => updateSpinner(logType, msg, ...params), 100);
   } else {
-    if (_settings.isSpinning) {
-      clearSpinner();
-    }
-
+    _settings.isSpinning && clearSpinner();
     fn(_settings.formatters.print(getContext({ logType }), msg, ...params));
     increaseLineNo();
   }
