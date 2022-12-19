@@ -300,7 +300,7 @@ export async function printStep<T = void>(stepName: string, stepFunction: () => 
   await openPrintGroup(() => {
     const context = getContext({ logType: "groupStart" });
 
-    return _info(_settings.formatters.print(context, _settings.formatters.stepStart(context, stepName)));
+    return printInfo(_settings.formatters.stepStart(context, stepName));
   });
 
   const ret = await stepFunction();
@@ -309,7 +309,7 @@ export async function printStep<T = void>(stepName: string, stepFunction: () => 
   await closePrintGroup(() => {
     const context = getContext({ logType: "groupEnd" });
 
-    _info(_settings.formatters.print(context, context.settings.formatters.stepEnd(context, stepName, end - start)));
+    return printInfo(context.settings.formatters.stepEnd(context, stepName, end - start));
   });
 
   return ret;
@@ -321,7 +321,7 @@ export function printStepSync<T = void>(stepName: string, stepFunction: () => T)
   openPrintGroupSync(() => {
     const context = getContext({ logType: "groupStart" });
 
-    return _info(_settings.formatters.print(context, _settings.formatters.stepStart(context, stepName)));
+    return printInfo(_settings.formatters.stepStart(context, stepName));
   });
 
   const ret = stepFunction();
@@ -330,7 +330,7 @@ export function printStepSync<T = void>(stepName: string, stepFunction: () => T)
   closePrintGroupSync(() => {
     const context = getContext({ logType: "groupEnd" });
 
-    _info(_settings.formatters.print(context, context.settings.formatters.stepEnd(context, stepName, end - start)));
+    printInfo(context.settings.formatters.stepEnd(context, stepName, end - start));
   });
 
   return ret;
