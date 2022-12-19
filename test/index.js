@@ -11,6 +11,7 @@ const {
   printArray,
   ...cornsol
 } = require("../dist");
+const chalk = require("chalk");
 
 console.log("before register test");
 
@@ -56,13 +57,13 @@ printGroupSync(
     console.log("Sync printGroup test");
   },
   () => console.log("1. Sync printGroup open test"),
-  () => console.log("Sync printGroup close test"),
+  () => console.log("Sync printGroup close test")
 );
 printGroupSync(
   () => {
     console.log("Sync printGroup test");
   },
-  () => console.log("2. Sync printGroup open test"),
+  () => console.log("2. Sync printGroup open test")
 );
 
 (async () => {
@@ -102,20 +103,20 @@ printGroupSync(
       console.log("printGroup test");
     },
     () => console.log("1. printGroup open test"),
-    () => console.log("printGroup close test"),
+    () => console.log("printGroup close test")
   );
   await printGroup(
     () => {
       console.log("printGroup test");
     },
-    () => console.log("2. printGroup open test"),
+    () => console.log("2. printGroup open test")
   );
   console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`);
 
   await printGroup(
     () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`),
     () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`),
-    () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`),
+    () => console.log(`New line Test ${new Array(process.stdout.columns * 3).join("0")}`)
   );
 
   await printArray(console.log, ["Item 1", "Item 2"]);
@@ -133,4 +134,7 @@ printGroupSync(
     formatters: { lineNumber: ({ lineNo }) => String(lineNo).padStart(5, "x") },
   });
   console.log("Customize test");
+
+  console.log(chalk.cyan("http://localhost:3000aaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+  console.log(JSON.stringify(chalk.cyan("http://localhost:3000aaaaaaaaaaaaaaaaaaaaaaaaaaa")));
 })();

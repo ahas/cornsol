@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { sprintf } from "sprintf-js";
-import type { CornsolSettings, CornsolContext, CornsolColor, LogType, SymbolType } from "./types";
+import type { CornsolSettings, CornsolContext, LogType, SymbolType } from "./types";
 
 // original console functions
 const _log = console.log;
@@ -15,7 +15,12 @@ let _groupLineNo = 0;
 let _isGroupEnabled = false;
 let _isGroupEnd = false;
 let _printGroupPrefix = "";
+let _spinnerIndex = 0;
+let _spinnerInterval: NodeJS.Timeout = null;
+let _lastPrintText = "";
 let _settings: CornsolSettings = {
+  spinners: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
+  isSpinning: false,
   colors: {
     log: [],
     groupStart: ["green"],
@@ -39,8 +44,13 @@ let _settings: CornsolSettings = {
   formatters: {
     labelSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const lineIcon = _isGroupEnabled ? _printGroupPrefix : getSymbol("singleLine", context.logType);
+      const groupSymbol = context.settings.isSpinning ? context.settings.spinners[_spinnerIndex] : _printGroupPrefix;
+      const lineIcon = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
       const prefix = getSpace(lineNoText.length + 3);
+
+      if (++_spinnerIndex >= _settings.spinners.length) {
+        _spinnerIndex = 0;
+      }
 
       return getSpace(`${prefix} ${lineIcon}`.length + 1);
     },
@@ -53,8 +63,13 @@ let _settings: CornsolSettings = {
     label(context) {
       const prefixSymbol = getSymbol("prefix", context.logType);
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const lineSymbol = _isGroupEnabled ? _printGroupPrefix : getSymbol("singleLine", context.logType);
+      const groupSymbol = context.settings.isSpinning ? context.settings.spinners[_spinnerIndex] : _printGroupPrefix;
+      const lineSymbol = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
+
+      if (++_spinnerIndex >= _settings.spinners.length) {
+        _spinnerIndex = 0;
+      }
 
       if (_isGroupEnabled && _groupLineNo >= 1) {
         prefix = getSpace(lineNoText.length + 3);
@@ -134,9 +149,37 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
   return lines.join(newLineSymbol);
 }
 
+function clearSpinner() {
+  _settings.isSpinning = false;
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(_lastPrintText + "\n");
+  _spinnerInterval && clearInterval(_spinnerInterval);
+}
+
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
-  fn(_settings.formatters.print(getContext({ logType }), msg, ...params));
-  increaseLineNo();
+  if (_isGroupEnabled && _groupLineNo > 0 && !_isGroupEnd) {
+    if (_settings.isSpinning) {
+      clearSpinner();
+    }
+
+    _lastPrintText = _settings.formatters.print(getContext({ logType }), msg, ...params);
+    _spinnerIndex = 0;
+    _settings.isSpinning = true;
+
+    _spinnerInterval = setInterval(() => {
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(_settings.formatters.print(getContext({ logType }), msg, ...params));
+    }, 100);
+  } else {
+    if (_settings.isSpinning) {
+      clearSpinner();
+    }
+
+    fn(_settings.formatters.print(getContext({ logType }), msg, ...params));
+    increaseLineNo();
+  }
 }
 
 export function configure(settings: CornsolSettings) {
