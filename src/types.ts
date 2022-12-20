@@ -26,8 +26,10 @@ export interface CornsolContext {
 }
 
 export interface CornsolSettings {
-  spinners: string[],
-  isSpinning: boolean,
+  spinner: {
+    characters: string[];
+    isActive: boolean;
+  };
   colors: { [key in LogType]: CornsolColor[] };
   symbols: {
     groupStart: CornsolSymbol;

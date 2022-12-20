@@ -2,6 +2,28 @@ import chalk from "chalk";
 import { sprintf } from "sprintf-js";
 import type { CornsolSettings, CornsolContext, LogType, SymbolType } from "./types";
 
+export const defaultSpinners = {
+  A: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
+  B: ["▉", "▊", "▋", "▌", "▍", "▎", "▏", "▎", "▍", "▌", "▋", "▊", "▉"],
+  C: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█", "▇", "▆", "▅", "▄", "▃", "▁"],
+  D: ["▖", "▘", "▝", "▗"],
+  E: ["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"],
+  F: ["◢", "◣", "◤", "◥"],
+  G: ["◰", "◳", "◲", "◱"],
+  H: ["◴", "◷", "◶", "◵"],
+  I: ["◐", "◓", "◑", "◒"],
+  J: ["◡◡", "⊙⊙", "◠◠"],
+  K: ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"],
+  L: ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"],
+  M: ["b", "ᓂ", "q", "ᓄ"],
+  N: ["d", "ᓇ", "p", "ᓀ"],
+  O: ["d", "|", "b", "|"],
+  P: ["q", "|", "p", "|"],
+  Q: ["ᓂ", "—", "ᓄ", "—"],
+  R: ["ᓇ", "—", "ᓀ", "—"],
+  S: ["|", "/", "—", "\\"],
+};
+
 // original console functions
 const _log = console.log;
 const _info = console.info;
@@ -12,7 +34,6 @@ const _debug = console.debug;
 // global status
 let _lineNo = 0;
 let _groupLineNo = 0;
-let _multiLineNo = 0;
 let _isGroupEnabled = false;
 let _isGroupEnd = false;
 let _printGroupPrefix = "";
@@ -20,8 +41,10 @@ let _spinnerIndex = 0;
 let _spinnerInterval: NodeJS.Timeout = null;
 let _lastPrintText = "";
 let _settings: CornsolSettings = {
-  spinners: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
-  isSpinning: false,
+  spinner: {
+    characters: defaultSpinners.A,
+    isActive: false,
+  },
   colors: {
     log: [],
     groupStart: ["green"],
@@ -48,19 +71,21 @@ let _settings: CornsolSettings = {
       const lineIcon = _isGroupEnabled ? _printGroupPrefix : getSymbol("singleLine", context.logType);
       const prefix = getSpace(lineNoText.length + 3);
 
-      return getSpace(`${prefix} ${context.settings.isSpinning ? " " : lineIcon}`.length + 1);
+      return getSpace(`${prefix} ${context.settings.spinner.isActive ? " " : lineIcon}`.length + 1);
     },
     groupNewLineSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
 
       return `${getSpace(lineNoText.length + 3)} ${
-        context.settings.isSpinning ? " " : getSymbol("groupLine", context.logType)
+        context.settings.spinner.isActive ? " " : getSymbol("groupLine", context.logType)
       }`;
     },
     label(context) {
       const prefixSymbol = getSymbol("prefix", context.logType);
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const groupSymbol = context.settings.isSpinning ? context.settings.spinners[_spinnerIndex] : _printGroupPrefix;
+      const groupSymbol = context.settings.spinner.isActive
+        ? context.settings.spinner.characters[_spinnerIndex]
+        : _printGroupPrefix;
       const lineSymbol = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
 
@@ -161,7 +186,7 @@ function removeSpinner() {
 
   _spinnerInterval && clearInterval(_spinnerInterval);
   _spinnerInterval = null;
-  _settings.isSpinning = false;
+  _settings.spinner.isActive = false;
 
   for (let i = 0; i < lines.length; i++) {
     process.stdout.moveCursor(0, -1);
@@ -183,7 +208,7 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
     }
   }
 
-  if (++_spinnerIndex >= _settings.spinners.length) {
+  if (++_spinnerIndex >= _settings.spinner.characters.length) {
     _spinnerIndex = 0;
   }
 
@@ -192,12 +217,12 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
 }
 
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
-  _settings.isSpinning && removeSpinner();
+  _settings.spinner.isActive && removeSpinner();
 
   if (_isGroupEnabled && _groupLineNo > 0 && !_isGroupEnd) {
     _lastPrintText = _settings.formatters.print(getContext({ logType }), msg, ...params);
     _spinnerIndex = 0;
-    _settings.isSpinning = true;
+    _settings.spinner.isActive = true;
 
     updateSpinner(logType, msg, ...params);
     _spinnerInterval = setInterval(() => updateSpinner(logType, msg, ...params), 100);
@@ -210,6 +235,7 @@ function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
 export function configure(settings: CornsolSettings) {
   _settings ??= {} as CornsolSettings;
   settings ??= {} as CornsolSettings;
+  _spinnerIndex = 0;
 
   for (const key in settings) {
     _settings[key] ??= {};
