@@ -187,7 +187,7 @@ cornsol.configure({
 Example
 
 ```ts
-const cornsol = require("../dist");
+const cornsol = require("cornsol");
 
 cornsol.register();
 
@@ -217,7 +217,7 @@ Result
 Example
 
 ```ts
-const cornsol = require("../dist");
+const cornsol = require("cornsol");
 
 cornsol.register();
 
@@ -248,7 +248,7 @@ Result
 Example
 
 ```ts
-const cornsol = require("../dist");
+const cornsol = require("cornsol");
 
 cornsol.register();
 

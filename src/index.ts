@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { sprintf } from "sprintf-js";
-import type { CornsolSettings, CornsolContext, LogType, SymbolType } from "./types";
+import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType } from "./types";
 
 export const spinners = [
   "⣾⣽⣻⢿⡿⣟⣯⣷",
@@ -32,10 +32,13 @@ const _warn = console.warn;
 const _debug = console.debug;
 
 // global status
+const _groupStack: PrintGroupStack[] = [];
+
 let _lineNo = 0;
 let _groupLineNo = 0;
-let _isGroupEnabled = false;
+let _isGroupStart = false;
 let _isGroupEnd = false;
+let _groupDepth = 0;
 let _printGroupPrefix = "";
 let _spinnerIndex = 0;
 let _spinnerInterval: NodeJS.Timeout = null;
@@ -50,25 +53,34 @@ let _settings: CornsolSettings = {
     groupStart: ["green"],
     groupLine: [],
     groupEnd: ["blue"],
+    internalGroupStart: ["green"],
+    internalGroupLine: [],
+    internalGroupEnd: ["blue"],
     info: ["blue"],
     start: ["green"],
     error: ["red"],
     warn: ["yellow"],
     del: ["red"],
     debug: ["magenta"],
+    divider: [],
   },
   symbols: {
-    groupStart: "┬",
+    groupStart: "┌",
     groupLine: "│",
     groupEnd: "└",
+    internalGroupStart: "├─┬",
+    internalGroupLine: "│ │",
+    internalGroupEnd: "│ └",
     singleLine: "─",
     newLine: "↳",
+    divider: "─",
     prefix: ({ settings, logType }) => settings.colors[logType].reduce((a, b) => chalk[b](a), "➤"),
   },
   formatters: {
     labelSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const lineIcon = _isGroupEnabled ? _printGroupPrefix : getSymbol("singleLine", context.logType);
+      const groupSymbol = getGroupSymbol(context);
+      const lineIcon = _groupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
       const prefix = getSpace(lineNoText.length + 3);
 
       return getSpace(`${prefix} ${context.settings.spinner.isActive ? " " : lineIcon}`.length + 1);
@@ -83,13 +95,11 @@ let _settings: CornsolSettings = {
     label(context) {
       const prefixSymbol = getSymbol("prefix", context.logType);
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const groupSymbol = context.settings.spinner.isActive
-        ? context.settings.spinner.symbols[_spinnerIndex]
-        : _printGroupPrefix;
-      const lineSymbol = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
+      const groupSymbol = getGroupSymbol(context);
+      const lineSymbol = _groupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
 
-      if (_isGroupEnabled && _groupLineNo >= 1) {
+      if (_groupDepth > 0 && _groupLineNo >= 1) {
         prefix = getSpace(lineNoText.length + 3);
       } else {
         prefix = `${prefixSymbol} ${lineNoText}`;
@@ -105,12 +115,83 @@ let _settings: CornsolSettings = {
     },
     stepStart: (context, name) => `${name} step`,
     stepEnd: (context, name, duration) => `Completed in ${context.duration(duration)}`,
+    divider: (context, msg, ...params) => {
+      const label = context.settings.formatters.label(context);
+      const dividerSymbol = getSymbol("divider", "log");
+
+      return `${new Array(label.length + 1).join(dividerSymbol)} ${splitMessage(context, label, msg, ...params)}`;
+    },
   },
 };
 
 // private functions
+function pushGroup() {
+  _groupStack.push({
+    lineNo: _groupLineNo,
+    prefix: _printGroupPrefix,
+    depth: _groupDepth,
+  });
+
+  _groupLineNo = 0;
+  _lineNo++;
+  _groupDepth++;
+}
+
+function popGroup() {
+  const stack = _groupStack.pop();
+
+  if (stack) {
+    _groupLineNo = stack.lineNo;
+    _printGroupPrefix = stack.prefix;
+    _groupDepth = stack.depth;
+  }
+}
+
+function appendGroupLine(groupSymbol: string): string {
+  for (let i = 0; i < _groupDepth - 2; i++) {
+    const symbol = getSymbol("internalGroupLine", "internalGroupLine");
+    groupSymbol += symbol.substring(0, symbol.length - 1);
+  }
+
+  return groupSymbol;
+}
+
+function getGroupSymbol(context: CornsolContext): string {
+  let groupSymbol: string = "";
+
+  if (context.settings.spinner.isActive) {
+    groupSymbol = context.settings.spinner.symbols[_spinnerIndex];
+  } else if (_isGroupStart) {
+    groupSymbol += appendGroupLine(groupSymbol);
+
+    if (_groupDepth > 1) {
+      groupSymbol += getSymbol("internalGroupStart", "internalGroupStart");
+    } else {
+      groupSymbol += getSymbol("groupStart", "groupStart");
+    }
+  } else if (_isGroupEnd) {
+    groupSymbol += appendGroupLine(groupSymbol);
+
+    if (_groupDepth > 1) {
+      groupSymbol += getSymbol("internalGroupEnd", "internalGroupEnd");
+    } else {
+      groupSymbol += getSymbol("groupEnd", "groupEnd");
+    }
+  } else {
+    groupSymbol += appendGroupLine(groupSymbol);
+
+    if (_groupDepth > 1) {
+      groupSymbol += getSymbol("internalGroupLine", "internalGroupLine");
+    } else {
+      groupSymbol += getSymbol("groupLine", "groupLine");
+    }
+  }
+
+  return groupSymbol;
+}
+
 function increaseLineNo() {
-  if (!_isGroupEnabled) {
+  if (_groupDepth === 0) {
     _lineNo++;
   } else {
     _groupLineNo++;
@@ -163,7 +244,7 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
     const line = lines[i];
     let label: string;
 
-    if (_isGroupEnabled && !_isGroupEnd) {
+    if (_groupDepth > 0 && !_isGroupEnd) {
       label = context.settings.formatters.groupNewLineSpace(context);
     } else {
       label = context.settings.formatters.labelSpace(context);
@@ -196,6 +277,12 @@ function removeSpinner() {
   process.stdout.write(_lastPrintText + "\n");
 }
 
+function initSpinner(text: string) {
+  _lastPrintText = text;
+  _spinnerIndex = 0;
+  _settings.spinner.isActive = true;
+}
+
 function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
   const text = _settings.formatters.print(getContext({ logType }), msg, ...params);
 
@@ -219,16 +306,25 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
   _settings.spinner.isActive && removeSpinner();
 
-  if (_isGroupEnabled && _groupLineNo > 0 && !_isGroupEnd) {
-    _lastPrintText = _settings.formatters.print(getContext({ logType }), msg, ...params);
-    _spinnerIndex = 0;
-    _settings.spinner.isActive = true;
-
+  if (_groupDepth > 0 && _groupLineNo > 0 && !_isGroupEnd) {
+    initSpinner(_settings.formatters.print(getContext({ logType }), msg, ...params));
     updateSpinner(logType, msg, ...params);
     _spinnerInterval = setInterval(() => updateSpinner(logType, msg, ...params), 100);
   } else {
     fn(_settings.formatters.print(getContext({ logType }), msg, ...params));
     increaseLineNo();
+  }
+}
+
+function printText(fn: Function, logType: LogType, text: string) {
+  _settings.spinner.isActive && removeSpinner();
+
+  if (_groupDepth > 0 && _groupLineNo > 0 && !_isGroupEnd) {
+    initSpinner(text);
+    updateSpinner(logType, text);
+    _spinnerInterval = setInterval(() => updateSpinner(logType, text), 100);
+  } else {
+    fn(text);
   }
 }
 
@@ -287,30 +383,41 @@ export function printDebug(msg: any, ...params: any[]) {
   print(_debug, "debug", msg, ...params);
 }
 
+export function printDivider(msg: any, ...params: any[]) {
+  const context = getContext({ logType: "log" });
+  const message = context.settings.formatters.divider(context, msg, ...params);
+
+  printText(_log, "divider", message);
+}
+
 export async function openPrintGroup<T>(fn?: () => T | Promise<T>): Promise<T> {
-  _isGroupEnabled = true;
+  _isGroupStart = true;
   _printGroupPrefix = getSymbol("groupStart", "groupStart");
 
-  _groupLineNo = 0;
+  pushGroup();
+
   const ret = (await fn?.()) || undefined;
   !fn && console.log("");
 
   _groupLineNo++;
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
+  _isGroupStart = false;
 
   return ret;
 }
 
 export function openPrintGroupSync<T>(fn?: () => T): T {
-  _isGroupEnabled = true;
+  _isGroupStart = true;
   _printGroupPrefix = getSymbol("groupStart", "groupStart");
 
-  _groupLineNo = 0;
+  pushGroup();
+
   const ret = fn?.() || undefined;
   !fn && console.log("");
 
   _groupLineNo++;
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
+  _isGroupStart = false;
 
   return ret;
 }
@@ -323,9 +430,9 @@ export async function closePrintGroup<T>(fn?: () => T): Promise<T> {
   !fn && console.log("");
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupEnabled = false;
   _isGroupEnd = false;
   _lineNo++;
+  popGroup();
 
   return ret;
 }
@@ -338,9 +445,9 @@ export function closePrintGroupSync<T>(fn?: () => T): T {
   !fn && console.log("");
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupEnabled = false;
   _isGroupEnd = false;
   _lineNo++;
+  popGroup();
 
   return ret;
 }
@@ -433,7 +540,7 @@ export function printArraySync(fn: (msg: any, ...params: any[]) => void, message
   if (messages.length === 1) {
     fn(messages[0]);
   } else {
-    openPrintGroupSync(() => fn(messages[1]));
+    openPrintGroupSync(() => fn(messages[0]));
 
     for (let i = 1; i < messages.length - 1; i++) {
       fn(messages[i]);
