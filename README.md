@@ -5,10 +5,10 @@
 - [Cautions](#cautions)
 - [Usage](#usage)
   - [Register globally](#register-globally)
-  - [Print group](#print-group)
-  - [Print array](#print-array)
-  - [Print buffer](#print-buffer)
-- [Customize](#customize)
+  - [Group](#group)
+  - [Array](#array)
+  - [Buffer](#buffer)
+- [Customizations](#customizations)
   - [Spinners](#spinners)
   - [Line numbers](#line-numbers)
   - [Step messages](#step-messages)
@@ -62,7 +62,7 @@ import * as cornsol from "cornsol";
 cornsol.register();
 ```
 
-## Print group
+## Group
 
 Example
 
@@ -70,8 +70,6 @@ Example
 const cornsol = require("cornsol");
 
 cornsol.register();
-
-console.log("This is an example for print group");
 
 cornsol.printGroupSync(
   () => {
@@ -99,7 +97,7 @@ Result
         └ close group
 ```
 
-## Print array
+## Array
 
 Example
 
@@ -118,7 +116,7 @@ Result
         └ Item 2
 ```
 
-## Print buffer
+## Buffer
 
 Example
 
@@ -129,9 +127,12 @@ const { exec } = require("child_process");
 const proc = exec("process_path");
 
 proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
+
+// It works internally like
+cornsol.printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
 ```
 
-# Customize
+# Customizations
 
 `cornsol` supports customizing.
 
@@ -269,15 +270,16 @@ cornsol.printGroupSync(
 );
 ```
 
-Result
+Result (small size terminal)
 
 ```bash
 $ 0000: * 0
 $ 0001: * 1
 $ 0002: * 2
-$ 0003: ┳ 0
+$ 0003: ┳ The cool step Test
+        ┣ 0
         ┣ 1
         ┣ 2
-        ┣ 3
-        ┗ 4
+        ┗ The cool step Test has been
+          &  completed in 0s 1ms
 ```

@@ -45,4 +45,10 @@ function printNumbers() {
       console.log(i);
     }
   });
+
+  cornsol.printStepSync("Test", () => {
+    for (let i = 0; i < 3; i++) {
+      console.log(new Array(30).join(i));
+    }
+  });
 }
