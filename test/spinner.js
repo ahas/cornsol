@@ -3,11 +3,12 @@ const cornsol = require("../dist");
 cornsol.register();
 
 (async () => {
-  for (const key in cornsol.defaultSpinners) {
+  for (const symbols of cornsol.spinners) {
+    console.log(symbols);
     await cornsol.printGroup(
       () =>
         new Promise((resolve) => {
-          cornsol.configure({ spinner: { characters: cornsol.defaultSpinners[key] } });
+          cornsol.configure({ spinner: { symbols } });
           console.log("11111111111111111111111111111111111111111111111111111111111111111111111111111111");
           console.log("22222222222222222222222222222222222222222222222222222222222222222222222222222222");
           console.log("33333333333333333333333333333333333333333333333333333333333333333333333333333333");
@@ -17,7 +18,6 @@ cornsol.register();
       () => console.log("header"),
       () => console.log("footer")
     );
-    continue;
 
     await cornsol.printStep(
       "Test",

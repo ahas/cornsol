@@ -2,27 +2,27 @@ import chalk from "chalk";
 import { sprintf } from "sprintf-js";
 import type { CornsolSettings, CornsolContext, LogType, SymbolType } from "./types";
 
-export const defaultSpinners = {
-  A: ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
-  B: ["▉", "▊", "▋", "▌", "▍", "▎", "▏", "▎", "▍", "▌", "▋", "▊", "▉"],
-  C: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█", "▇", "▆", "▅", "▄", "▃", "▁"],
-  D: ["▖", "▘", "▝", "▗"],
-  E: ["┤", "┘", "┴", "└", "├", "┌", "┬", "┐"],
-  F: ["◢", "◣", "◤", "◥"],
-  G: ["◰", "◳", "◲", "◱"],
-  H: ["◴", "◷", "◶", "◵"],
-  I: ["◐", "◓", "◑", "◒"],
-  J: ["◡◡", "⊙⊙", "◠◠"],
-  K: ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"],
-  L: ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"],
-  M: ["b", "ᓂ", "q", "ᓄ"],
-  N: ["d", "ᓇ", "p", "ᓀ"],
-  O: ["d", "|", "b", "|"],
-  P: ["q", "|", "p", "|"],
-  Q: ["ᓂ", "—", "ᓄ", "—"],
-  R: ["ᓇ", "—", "ᓀ", "—"],
-  S: ["|", "/", "—", "\\"],
-};
+export const spinners = [
+  "⣾⣽⣻⢿⡿⣟⣯⣷",
+  "←↖↑↗→↘↓↙",
+  "⠁⠂⠄⡀⢀⠠⠐⠈",
+  "▉▊▋▌▍▎▏▎▍▌▋▊▉",
+  "▁▂▃▄▅▆▇█▇▆▅▄▃▁",
+  "▖▘▝▗",
+  "┤┘┴└├┌┬┐",
+  "◢◣◤◥",
+  "◰◳◲◱",
+  "◴◷◶◵",
+  "◐◓◑◒",
+  "◡⊙◠",
+  "bᓂqᓄ",
+  "dᓇpᓀ",
+  "d|b|",
+  "q|p|",
+  "ᓂ—ᓄ—",
+  "ᓇ—ᓀ—",
+  "|/—\\",
+];
 
 // original console functions
 const _log = console.log;
@@ -42,7 +42,7 @@ let _spinnerInterval: NodeJS.Timeout = null;
 let _lastPrintText = "";
 let _settings: CornsolSettings = {
   spinner: {
-    characters: defaultSpinners.A,
+    symbols: spinners[0],
     isActive: false,
   },
   colors: {
@@ -84,7 +84,7 @@ let _settings: CornsolSettings = {
       const prefixSymbol = getSymbol("prefix", context.logType);
       const lineNoText = context.settings.formatters.lineNumber(context);
       const groupSymbol = context.settings.spinner.isActive
-        ? context.settings.spinner.characters[_spinnerIndex]
+        ? context.settings.spinner.symbols[_spinnerIndex]
         : _printGroupPrefix;
       const lineSymbol = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
@@ -208,7 +208,7 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
     }
   }
 
-  if (++_spinnerIndex >= _settings.spinner.characters.length) {
+  if (++_spinnerIndex >= _settings.spinner.symbols.length) {
     _spinnerIndex = 0;
   }
 
