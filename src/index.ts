@@ -87,10 +87,29 @@ let _settings: CornsolSettings = {
     },
     groupNewLineSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
+      let groupSymbol: string = "";
 
-      return `${getSpace(lineNoText.length + 3)} ${
-        context.settings.spinner.isActive ? " " : getSymbol("groupLine", context.logType)
-      }`;
+      if (!context.settings.spinner.isActive) {
+        if (_groupDepth > 1) {
+          groupSymbol = appendGroupLine(groupSymbol);
+          const groupLineSymbol = getSymbol("groupLine", "groupLine");
+          const groupInternalLineSymbol = getSymbol("internalGroupLine", "internalGroupLine");
+
+          if (_isGroupEnd) {
+            groupSymbol +=
+              getSymbol("groupLine", "groupLine") +
+              new Array(groupInternalLineSymbol.length - groupLineSymbol.length).join(" ");
+          } else if (!_isGroupEnd) {
+            groupSymbol += getSymbol("internalGroupLine", "internalGroupLine");
+          }
+        } else if (!_isGroupEnd) {
+          groupSymbol += getSymbol("groupLine", "groupLine");
+        }
+      } else {
+        groupSymbol = " ";
+      }
+
+      return `${getSpace(lineNoText.length + 3)} ${groupSymbol}`;
     },
     label(context) {
       const prefixSymbol = getSymbol("prefix", context.logType);
@@ -161,7 +180,7 @@ function getGroupSymbol(context: CornsolContext): string {
   if (context.settings.spinner.isActive) {
     groupSymbol = context.settings.spinner.symbols[_spinnerIndex];
   } else if (_isGroupStart) {
-    groupSymbol += appendGroupLine(groupSymbol);
+    groupSymbol = appendGroupLine(groupSymbol);
 
     if (_groupDepth > 1) {
       groupSymbol += getSymbol("internalGroupStart", "internalGroupStart");
@@ -169,7 +188,7 @@ function getGroupSymbol(context: CornsolContext): string {
       groupSymbol += getSymbol("groupStart", "groupStart");
     }
   } else if (_isGroupEnd) {
-    groupSymbol += appendGroupLine(groupSymbol);
+    groupSymbol = appendGroupLine(groupSymbol);
 
     if (_groupDepth > 1) {
       groupSymbol += getSymbol("internalGroupEnd", "internalGroupEnd");
@@ -177,7 +196,7 @@ function getGroupSymbol(context: CornsolContext): string {
       groupSymbol += getSymbol("groupEnd", "groupEnd");
     }
   } else {
-    groupSymbol += appendGroupLine(groupSymbol);
+    groupSymbol = appendGroupLine(groupSymbol);
 
     if (_groupDepth > 1) {
       groupSymbol += getSymbol("internalGroupLine", "internalGroupLine");
@@ -243,7 +262,7 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
     const line = lines[i];
     let label: string;
 
-    if (_groupDepth > 0 && !_isGroupEnd) {
+    if (_groupDepth > 0) {
       label = context.settings.formatters.groupNewLineSpace(context);
     } else {
       label = context.settings.formatters.labelSpace(context);
