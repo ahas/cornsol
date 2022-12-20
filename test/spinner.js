@@ -6,11 +6,11 @@ cornsol.register();
   await cornsol.printGroup(
     () =>
       new Promise((resolve) => {
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        setTimeout(resolve, 5000);
+        console.log("11111111111111111111111111111111111111111111111111111111111111111111111111111111");
+        console.log("22222222222222222222222222222222222222222222222222222222222222222222222222222222");
+        console.log("33333333333333333333333333333333333333333333333333333333333333333333333333333333");
+        console.log("44444444444444444444444444444444444444444444444444444444444444444444444444444444");
+        setTimeout(resolve, 1000);
       }),
     () => console.log("header"),
     () => console.log("footer")
@@ -20,11 +20,11 @@ cornsol.register();
     "Test",
     () =>
       new Promise((resolve) => {
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        console.log("Spinning ~");
-        setTimeout(resolve, 5000);
+        console.log("55555555555555555555555555555555555555555555555555555555555555555555555555555555");
+        console.log("66666666666666666666666666666666666666666666666666666666666666666666666666666666");
+        console.log("77777777777777777777777777777777777777777777777777777777777777777777777777777777");
+        console.log("88888888888888888888888888888888888888888888888888888888888888888888888888888888");
+        setTimeout(resolve, 1000);
       })
   );
 })();

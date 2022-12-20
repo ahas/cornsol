@@ -12,6 +12,7 @@ const _debug = console.debug;
 // global status
 let _lineNo = 0;
 let _groupLineNo = 0;
+let _multiLineNo = 0;
 let _isGroupEnabled = false;
 let _isGroupEnd = false;
 let _printGroupPrefix = "";
@@ -44,21 +45,17 @@ let _settings: CornsolSettings = {
   formatters: {
     labelSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const groupSymbol = context.settings.isSpinning ? context.settings.spinners[_spinnerIndex] : _printGroupPrefix;
-      const lineIcon = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
+      const lineIcon = _isGroupEnabled ? _printGroupPrefix : getSymbol("singleLine", context.logType);
       const prefix = getSpace(lineNoText.length + 3);
 
-      if (++_spinnerIndex >= _settings.spinners.length) {
-        _spinnerIndex = 0;
-      }
-
-      return getSpace(`${prefix} ${lineIcon}`.length + 1);
+      return getSpace(`${prefix} ${context.settings.isSpinning ? " " : lineIcon}`.length + 1);
     },
     groupNewLineSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
-      const groupLineSymbol = getSymbol("groupLine", context.logType);
 
-      return `${getSpace(lineNoText.length + 3)} ${groupLineSymbol}`;
+      return `${getSpace(lineNoText.length + 3)} ${
+        context.settings.isSpinning ? " " : getSymbol("groupLine", context.logType)
+      }`;
     },
     label(context) {
       const prefixSymbol = getSymbol("prefix", context.logType);
@@ -66,10 +63,6 @@ let _settings: CornsolSettings = {
       const groupSymbol = context.settings.isSpinning ? context.settings.spinners[_spinnerIndex] : _printGroupPrefix;
       const lineSymbol = _isGroupEnabled ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
-
-      if (++_spinnerIndex >= _settings.spinners.length) {
-        _spinnerIndex = 0;
-      }
 
       if (_isGroupEnabled && _groupLineNo >= 1) {
         prefix = getSpace(lineNoText.length + 3);
@@ -130,13 +123,6 @@ function getSymbol(name: SymbolType, logType: LogType) {
 function splitMessage(context: CornsolContext, label: string, msg: any, ...params: any[]) {
   let str = context.format(String(msg), ...params);
 
-  if (_isGroupEnabled && !_isGroupEnd) {
-    label = context.settings.formatters.groupNewLineSpace(context);
-  } else {
-    label = context.settings.formatters.labelSpace(context);
-  }
-
-  const newLineSymbol = `\n${label} ${getSymbol("newLine", context.logType)} `;
   const maxMessageWidth = process.stdout.columns - label.length - 3;
   const lines: string[] = [];
   const length = str.length;
@@ -146,26 +132,69 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
     str = str.substring(maxMessageWidth);
   }
 
-  return lines.join(newLineSymbol);
+  let result = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let label: string;
+
+    if (_isGroupEnabled && !_isGroupEnd) {
+      label = context.settings.formatters.groupNewLineSpace(context);
+    } else {
+      label = context.settings.formatters.labelSpace(context);
+    }
+
+    const newLineSymbol = `\n${label} ${getSymbol("newLine", context.logType)} `;
+
+    result += line;
+
+    if (i + 1 < lines.length) {
+      result += newLineSymbol;
+    }
+  }
+
+  return result;
 }
 
-function clearSpinner() {
-  _settings.isSpinning = false;
-  process.stdout.clearLine(0);
-  process.stdout.cursorTo(0);
-  process.stdout.write(_lastPrintText + "\n");
+function removeSpinner() {
+  const lines = _lastPrintText.split("\n");
+
   _spinnerInterval && clearInterval(_spinnerInterval);
+  _spinnerInterval = null;
+  _settings.isSpinning = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    process.stdout.moveCursor(0, -1);
+    process.stdout.clearLine(0);
+  }
+
+  process.stdout.write(_lastPrintText + "\n");
 }
 
 function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
-  process.stdout.clearLine(0);
+  const text = _settings.formatters.print(getContext({ logType }), msg, ...params);
+
+  if (_spinnerInterval) {
+    const lines = text.split("\n");
+
+    for (let i = 0; i < lines.length; i++) {
+      process.stdout.moveCursor(0, -1);
+      process.stdout.clearLine(0);
+    }
+  }
+
+  if (++_spinnerIndex >= _settings.spinners.length) {
+    _spinnerIndex = 0;
+  }
+
   process.stdout.cursorTo(0);
-  process.stdout.write(_settings.formatters.print(getContext({ logType }), msg, ...params));
+  process.stdout.write(text + "\n");
 }
 
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
+  _settings.isSpinning && removeSpinner();
+
   if (_isGroupEnabled && _groupLineNo > 0 && !_isGroupEnd) {
-    _settings.isSpinning && clearSpinner();
     _lastPrintText = _settings.formatters.print(getContext({ logType }), msg, ...params);
     _spinnerIndex = 0;
     _settings.isSpinning = true;
@@ -173,7 +202,6 @@ function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
     updateSpinner(logType, msg, ...params);
     _spinnerInterval = setInterval(() => updateSpinner(logType, msg, ...params), 100);
   } else {
-    _settings.isSpinning && clearSpinner();
     fn(_settings.formatters.print(getContext({ logType }), msg, ...params));
     increaseLineNo();
   }
