@@ -15,7 +15,6 @@ JavaScript console library.
 
 ## Table of contents
 
-- [Introduction](#introduction)
 - [Installation](#installation)
 - [Cautions](#cautions)
 - [Usage](#usage)
