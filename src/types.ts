@@ -23,6 +23,7 @@ export interface CornsolContext {
   lineNo: number;
   logType: LogType;
   format: typeof sprintf;
+  duration: (d: number) => string;
 }
 
 export interface CornsolSettings {
@@ -47,6 +48,5 @@ export interface CornsolSettings {
     print: (context: CornsolContext, msg: any, ...params: any[]) => string;
     stepStart: (context: CornsolContext, name: string) => string;
     stepEnd: (context: CornsolContext, name: string, duration: number) => string;
-    duration: (d: number) => string;
   };
 }

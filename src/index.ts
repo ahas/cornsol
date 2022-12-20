@@ -104,20 +104,7 @@ let _settings: CornsolSettings = {
       return `${label} ${splitMessage(context, label, msg, ...params)}`;
     },
     stepStart: (context, name) => `${name} step`,
-    stepEnd: (context, name, duration) => `Completed in ${context.settings.formatters.duration(duration)}`,
-    duration(d) {
-      if (d > 1000 * 60) {
-        const minutes = Math.floor(d / 1000 / 60);
-        const seconds = Math.ceil((d - minutes * 60 * 1000) / 1000);
-
-        return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
-      } else {
-        const seconds = Math.floor(d / 1000);
-        const milliseconds = d - seconds * 1000;
-
-        return milliseconds === 0 ? `${seconds}s` : `${seconds}s ${milliseconds}ms`;
-      }
-    },
+    stepEnd: (context, name, duration) => `Completed in ${context.duration(duration)}`,
   },
 };
 
@@ -135,6 +122,19 @@ function getContext(partial: Pick<CornsolContext, "logType">): CornsolContext {
     settings: _settings,
     lineNo: _lineNo,
     format: sprintf,
+    duration(d) {
+      if (d > 1000 * 60) {
+        const minutes = Math.floor(d / 1000 / 60);
+        const seconds = Math.ceil((d - minutes * 60 * 1000) / 1000);
+
+        return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+      } else {
+        const seconds = Math.floor(d / 1000);
+        const milliseconds = d - seconds * 1000;
+
+        return milliseconds === 0 ? `${seconds}s` : `${seconds}s ${milliseconds}ms`;
+      }
+    },
     ...(partial || {}),
   } as CornsolContext;
 }
