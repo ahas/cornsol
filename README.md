@@ -169,7 +169,7 @@ export const spinners = [
 // Update config
 cornsol.configure({
   spinner: {
-    symbols: cornsol.spinners[4], // "▁▂▃▄▅▆▇█▇▆▅▄▃▁"
+    symbols: cornsol.spinners[4], // "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁"
   },
 });
 ```
