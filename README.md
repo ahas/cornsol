@@ -4,6 +4,8 @@ Pretty, Formatted, Numbered, Customizable
 
 JavaScript console library.
 
+[Demo](https://stackblitz.com/edit/node-1khd2o?file=index.ts)
+
 ![npm](https://img.shields.io/npm/v/cornsol)
 ![npm dev dependency version](https://img.shields.io/npm/dependency-version/cornsol/dev/typescript)
 ![npm](https://img.shields.io/npm/dm/cornsol)
