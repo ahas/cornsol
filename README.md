@@ -1,4 +1,17 @@
-# Table of contents
+# 🌽 cornsol 🌞
+
+Pretty, Formatted, Numbered, Customizable
+
+JavaScript console library.
+
+![npm](https://img.shields.io/npm/v/cornsol)
+![npm dev dependency version](https://img.shields.io/npm/dependency-version/cornsol/dev/typescript)
+![npm](https://img.shields.io/npm/dm/cornsol)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ahas/cornsol)
+![NPM](https://img.shields.io/npm/l/cornsol)
+![GitHub Repo stars](https://img.shields.io/github/stars/ahas/cornsol?style=social)
+
+## Table of contents
 
 - [Introduction](#introduction)
 - [Installation](#installation)
@@ -14,12 +27,7 @@
   - [Step messages](#step-messages)
   - [Symbols](#symbols)
 
-# Introduction
-
-🌽☀
-Pretty formatted numbered customizable JavaScript console library.
-
-# Installation
+## Installation
 
 ```bash
 npm install cornsol
@@ -27,7 +35,7 @@ npm install cornsol
 yarn add cornsol
 ```
 
-# Cautions
+## Cautions
 
 `cornsol` use the default naming for **asynchronous**.
 
@@ -42,9 +50,9 @@ function printArraySync(fn: (msg: any, ...params: any[]) => void, messages: any[
 function printBufferSync(fn: (msg: any, ...params: any[]) => void, chunk: any): void;
 ```
 
-# Usage
+## Usage
 
-## Register globally
+### Register globally
 
 1. JavaScript
 
@@ -62,7 +70,7 @@ import * as cornsol from "cornsol";
 cornsol.register();
 ```
 
-## Group
+### Group
 
 Example
 
@@ -97,7 +105,7 @@ Result
         └ close group
 ```
 
-## Array
+### Array
 
 Example
 
@@ -116,7 +124,7 @@ Result
         └ Item 2
 ```
 
-## Buffer
+### Buffer
 
 Example
 
@@ -132,7 +140,7 @@ proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
 cornsol.printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
 ```
 
-# Customizations
+## Customizations
 
 `cornsol` supports customizing.
 
@@ -146,24 +154,24 @@ There are some presets for spinner.
 // Built-in presets
 export const spinners = [
   /* 0  */ "⣾⣽⣻⢿⡿⣟⣯⣷",
-  /* 1  */  "←↖↑↗→↘↓↙",
-  /* 2  */  "⠁⠂⠄⡀⢀⠠⠐⠈",
-  /* 3  */  "▉▊▋▌▍▎▏▎▍▌▋▊▉",
-  /* 4  */  "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁",
-  /* 5  */  "▖▘▝▗",
-  /* 6  */  "┤┘┴└├┌┬┐",
-  /* 7  */  "◢◣◤◥",
-  /* 8  */  "◰◳◲◱",
-  /* 9  */  "◴◷◶◵",
-  /* 10 */  "◐◓◑◒",
-  /* 11 */  "◡⊙◠",
-  /* 12 */  "bᓂqᓄ",
-  /* 13 */  "dᓇpᓀ",
-  /* 14 */  "d|b|",
-  /* 15 */  "q|p|",
-  /* 16 */  "ᓂ—ᓄ—",
-  /* 17 */  "ᓇ—ᓀ—",
-  /* 18 */  "|/—\\",
+  /* 1  */ "←↖↑↗→↘↓↙",
+  /* 2  */ "⠁⠂⠄⡀⢀⠠⠐⠈",
+  /* 3  */ "▉▊▋▌▍▎▏▎▍▌▋▊▉",
+  /* 4  */ "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁",
+  /* 5  */ "▖▘▝▗",
+  /* 6  */ "┤┘┴└├┌┬┐",
+  /* 7  */ "◢◣◤◥",
+  /* 8  */ "◰◳◲◱",
+  /* 9  */ "◴◷◶◵",
+  /* 10 */ "◐◓◑◒",
+  /* 11 */ "◡⊙◠",
+  /* 12 */ "bᓂqᓄ",
+  /* 13 */ "dᓇpᓀ",
+  /* 14 */ "d|b|",
+  /* 15 */ "q|p|",
+  /* 16 */ "ᓂ—ᓄ—",
+  /* 17 */ "ᓇ—ᓀ—",
+  /* 18 */ "|/—\\",
 ];
 
 // Update config
@@ -283,3 +291,7 @@ $ 0003: ┳ The cool step Test
         ┗ The cool step Test has been
           &  completed in 0s 1ms
 ```
+
+## License
+
+[MIT](./LICENSE)
