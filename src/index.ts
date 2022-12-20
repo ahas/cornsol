@@ -133,7 +133,6 @@ function pushGroup() {
   });
 
   _groupLineNo = 0;
-  _lineNo++;
   _groupDepth++;
 }
 
@@ -191,7 +190,7 @@ function getGroupSymbol(context: CornsolContext): string {
 }
 
 function increaseLineNo() {
-  if (_groupDepth === 0) {
+  if (_groupDepth === 0 || _isGroupStart) {
     _lineNo++;
   } else {
     _groupLineNo++;
@@ -431,7 +430,6 @@ export async function closePrintGroup<T>(fn?: () => T): Promise<T> {
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupEnd = false;
-  _lineNo++;
   popGroup();
 
   return ret;
@@ -446,7 +444,6 @@ export function closePrintGroupSync<T>(fn?: () => T): T {
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupEnd = false;
-  _lineNo++;
   popGroup();
 
   return ret;

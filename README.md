@@ -23,6 +23,7 @@ JavaScript console library.
   - [Group](#group)
   - [Array](#array)
   - [Buffer](#buffer)
+  - [Divider](#divider)
 - [Customizations](#customizations)
   - [Spinners](#spinners)
   - [Line numbers](#line-numbers)
@@ -99,10 +100,10 @@ Result
 
 ```bash
 ➤ 0000: ─ This is an example for print group
-➤ 0001: ┬ group start
+➤ 0001: ┌ group start
         │ content
         └ group end
-➤ 0002: ┬ group start
+➤ 0002: ┌ group start
         │ content
         └ close group
 ```
@@ -122,7 +123,7 @@ cornsol.printArray(console.log, ["Item 1", "Item 2"]);
 Result
 
 ```bash
-➤ 0000: ┬ Item 1
+➤ 0000: ┌ Item 1
         └ Item 2
 ```
 
@@ -140,6 +141,26 @@ proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
 
 // It works internally like
 cornsol.printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
+```
+
+### Divider
+
+Example
+
+```ts
+const { printDivider } = require("cornsol");
+
+console.log("message 1");
+printDivider("This is a divider");
+console.log("message 2");
+```
+
+Result
+
+```bash
+➤ 0000: ─ message 1
+───────── This is a divider
+➤ 0001: ─ message 2
 ```
 
 ## Customizations
@@ -177,9 +198,11 @@ export const spinners = [
 ];
 
 // Update config
-cornsol.configure({
+const corn = require("cornsol");
+
+corn.configure({
   spinner: {
-    symbols: cornsol.spinners[4], // "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁"
+    symbols: corn.spinners[4], // "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁"
   },
 });
 ```
@@ -189,13 +212,11 @@ cornsol.configure({
 Example
 
 ```ts
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 
-console.log("This is an example for customizing");
-
-cornsol.configure({
+corn.configure({
   formatters: {
     lineNumber: (context) => `${String(context.lineNo).padStart(2, "0")} [${new Date().toISOString()}]:`,
   },
@@ -219,11 +240,11 @@ Result
 Example
 
 ```ts
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 
-cornsol.configure({
+corn.configure({
   formatters: {
     stepStart: (context, name) => `The cool step ${name}`,
     stepEnd: (context, name, duration) => `The cool step ${name} has been completed in ${context.duration(duration)}`,
@@ -238,7 +259,7 @@ console.log(2);
 Result
 
 ```bash
-➤ 0000: ┬ The cool step Test
+➤ 0000: ┌ The cool step Test
         │ 0
         │ 1
         │ 2
@@ -250,11 +271,11 @@ Result
 Example
 
 ```ts
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 
-cornsol.configure({
+corn.configure({
   symbols: {
     prefix: "$",
     singleLine: "*",
@@ -269,7 +290,7 @@ console.log(0);
 console.log(1);
 console.log(2);
 
-cornsol.printGroupSync(
+corn.printGroupSync(
   () => {
     console.log(1);
     console.log(2);
