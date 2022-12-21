@@ -32,7 +32,7 @@ JavaScript console library.
 ## Installation
 
 ```bash
-npm install cornsol
+npm i cornsol
 # or
 yarn add cornsol
 ```
@@ -59,17 +59,17 @@ function printBufferSync(fn: (msg: any, ...params: any[]) => void, chunk: any): 
 1. JavaScript
 
 ```ts
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 ```
 
 2. TypeScript
 
 ```ts
-import * as cornsol from "cornsol";
+import * as corn from "cornsol";
 
-cornsol.register();
+corn.register();
 ```
 
 ### Group
@@ -77,11 +77,11 @@ cornsol.register();
 Example
 
 ```js
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 
-cornsol.printGroupSync(
+corn.printGroupSync(
   () => {
     console.log("content");
   },
@@ -90,9 +90,9 @@ cornsol.printGroupSync(
 );
 
 // Open and close the group manually
-cornsol.openPrintGroupSync(() => console.log("group start"));
+corn.openPrintGroupSync(() => console.log("group start"));
 console.log("content");
-cornsol.closePrintGroupSync(() => console.log("close group"));
+corn.closePrintGroupSync(() => console.log("close group"));
 ```
 
 Result
@@ -112,11 +112,11 @@ Result
 Example
 
 ```ts
-const cornsol = require("cornsol");
+const corn = require("cornsol");
 
-cornsol.register();
+corn.register();
 
-cornsol.printArray(console.log, ["Item 1", "Item 2"]);
+corn.printArray(console.log, ["Item 1", "Item 2"]);
 ```
 
 Result
@@ -139,7 +139,7 @@ const proc = exec("process_path");
 proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
 
 // It works internally like
-cornsol.printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
+printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
 ```
 
 ### Divider
