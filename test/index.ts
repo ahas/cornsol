@@ -66,4 +66,7 @@ corn.printDivider("printStep function test");
   console.log("Group content 1");
   corn.closePrintGroupSync(() => console.log("depth 1 -- close--------------"));
   corn.printDivider("Depth test -- done");
+
+  // Print error
+  console.log(new Error("Unexpected error").stack);
 })();

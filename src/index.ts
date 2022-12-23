@@ -245,21 +245,27 @@ function getSymbol(name: SymbolType, logType: LogType) {
 }
 
 function splitMessage(context: CornsolContext, label: string, msg: any, ...params: any[]) {
-  let str = context.format(String(msg), ...params);
-
   const maxMessageWidth = process.stdout.columns - label.length - 3;
-  const lines: string[] = [];
-  const length = str.length;
+  const lines: string[] = context
+    .format(String(msg), ...params)
+    .split("\n")
+    .map((x) => x.trim());
+  const messages: string[] = [];
 
-  for (let i = 0; i < length; i += maxMessageWidth) {
-    lines.push(str.substring(0, maxMessageWidth));
-    str = str.substring(maxMessageWidth);
+  for (const line of lines) {
+    let buf = line;
+    const length = line.length;
+
+    for (let i = 0; i < length; i += maxMessageWidth) {
+      messages.push(buf.substring(0, maxMessageWidth));
+      buf = buf.substring(maxMessageWidth);
+    }
   }
 
   let result = "";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (let i = 0; i < messages.length; i++) {
+    const line = messages[i];
     let label: string;
 
     if (_groupDepth > 0) {
@@ -272,7 +278,7 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
 
     result += line;
 
-    if (i + 1 < lines.length) {
+    if (i + 1 < messages.length) {
       result += newLineSymbol;
     }
   }
