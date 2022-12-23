@@ -31,6 +31,14 @@ const _error = console.error;
 const _warn = console.warn;
 const _debug = console.debug;
 
+export const plain = {
+  log: _log,
+  info: _info,
+  error: _error,
+  warn: _warn,
+  debug: _debug,
+};
+
 // global status
 const _groupStack: PrintGroupStack[] = [];
 
@@ -246,8 +254,9 @@ function getSymbol(name: SymbolType, logType: LogType) {
 
 function splitMessage(context: CornsolContext, label: string, msg: any, ...params: any[]) {
   const maxMessageWidth = process.stdout.columns - label.length - 3;
-  const lines: string[] = context
-    .format(String(msg), ...params)
+  const lines: string[] = (
+    params && Array.isArray(params) && params.length > 0 ? context.format(String(msg), ...params) : String(msg)
+  )
     .split("\n")
     .map((x) => x.trim());
   const messages: string[] = [];

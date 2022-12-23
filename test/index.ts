@@ -69,4 +69,5 @@ corn.printDivider("printStep function test");
 
   // Print error
   console.log(new Error("Unexpected error").stack);
+  console.log(undefined);
 })();
