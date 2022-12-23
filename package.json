@@ -1,6 +1,6 @@
 {
   "name": "cornsol",
-  "version": "1.0.10",
+  "version": "1.0.10-dev.1",
   "description": "pretty console formatter",
   "main": "dist/index.js",
   "repository": "https://github.com/ahas/cornsol",
