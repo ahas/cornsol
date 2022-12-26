@@ -1,6 +1,6 @@
 {
   "name": "cornsol",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "pretty console formatter",
   "main": "dist/index.js",
   "repository": "https://github.com/ahas/cornsol",
@@ -19,8 +19,7 @@
     "test": "ts-node test/index.ts"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
-    "sprintf-js": "^1.1.2"
+    "chalk": "^4.1.2"
   },
   "devDependencies": {
     "@types/node": "^18.11.17",

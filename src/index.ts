@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { sprintf } from "sprintf-js";
+import util from "util";
 import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType } from "./types";
 
 export const spinners = [
@@ -228,7 +228,7 @@ function getContext(partial: Pick<CornsolContext, "logType">): CornsolContext {
   return {
     settings: _settings,
     lineNo: _lineNo,
-    format: sprintf,
+    format: util.format,
     duration(d) {
       if (d > 1000 * 60) {
         const minutes = Math.floor(d / 1000 / 60);
@@ -254,9 +254,8 @@ function getSymbol(name: SymbolType, logType: LogType) {
 
 function splitMessage(context: CornsolContext, label: string, msg: any, ...params: any[]) {
   const maxMessageWidth = process.stdout.columns - label.length - 3;
-  const lines: string[] = (
-    params && Array.isArray(params) && params.length > 0 ? context.format(String(msg), ...params) : String(msg)
-  )
+  const lines: string[] = context
+    .format(String(msg), ...(params || []))
     .split("\n")
     .map((x) => x.trim());
   const messages: string[] = [];
