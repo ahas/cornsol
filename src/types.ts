@@ -16,7 +16,10 @@ export type LogType =
   | "warn"
   | "del"
   | "debug"
-  | "divider";
+  | "dir"
+  | "divider"
+  | "table"
+  | "trace";
 export type SymbolType =
   | "groupStart"
   | "groupLine"
@@ -31,6 +34,7 @@ export type SymbolType =
 
 export type CornsolSymbol = string | ((context: CornsolContext) => string);
 export type CornsolFormatter = (context: CornsolContext) => string;
+export type PrintFunction = (msg?: any, ...params: any[]) => void;
 
 export interface CornsolContext {
   settings: CornsolSettings;
@@ -74,4 +78,13 @@ export interface PrintGroupStack {
   depth: number;
   prefix: string;
   lineNo: number;
+}
+
+declare global {
+  interface Console {
+    groupEnd(...labels: any[]): void;
+    div(...data: any[]): void;
+    array(arr: any[]): void;
+    chunk(chunk: any): void;
+  }
 }

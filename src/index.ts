@@ -1,6 +1,7 @@
 import chalk from "chalk";
-import util from "util";
-import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType } from "./types";
+import util, { InspectOptions } from "util";
+import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType, PrintFunction } from "./types";
+import { groupCollapsed } from "console";
 
 export const spinners = [
   "⣾⣽⣻⢿⡿⣟⣯⣷",
@@ -30,6 +31,12 @@ const _info = console.info;
 const _error = console.error;
 const _warn = console.warn;
 const _debug = console.debug;
+const _dir = console.dir;
+const _table = console.table;
+const _trace = console.trace;
+const _group = console.group;
+const _groupCollapsed = console.groupCollapsed;
+const _groupEnd = console.groupEnd;
 
 export const plain = {
   log: _log,
@@ -37,6 +44,12 @@ export const plain = {
   error: _error,
   warn: _warn,
   debug: _debug,
+  dir: _dir,
+  table: _table,
+  trace: _trace,
+  group: _group,
+  groupCollapsed: _groupCollapsed,
+  groupEnd: _groupEnd,
 };
 
 // global status
@@ -70,7 +83,10 @@ let _settings: CornsolSettings = {
     warn: ["yellow"],
     del: ["red"],
     debug: ["magenta"],
+    dir: ["magenta"],
     divider: [],
+    table: ["magenta"],
+    trace: ["magenta"],
   },
   symbols: {
     groupStart: "┌",
@@ -140,8 +156,8 @@ let _settings: CornsolSettings = {
 
       return `${label} ${splitMessage(context, label, msg, ...params)}`;
     },
-    stepStart: (context, name) => `${name} step`,
-    stepEnd: (context, name, duration) => `Completed in ${context.duration(duration)}`,
+    stepStart: (_context, name) => `${name} step`,
+    stepEnd: (context, _name, duration) => `Completed in ${context.duration(duration)}`,
     divider: (context, msg, ...params) => {
       const label = context.settings.formatters.label(context);
       const dividerSymbol = getSymbol("divider", "log");
@@ -381,10 +397,30 @@ export function register() {
   wrap("error", printError);
   wrap("warn", printWarn);
   wrap("debug", printDebug);
+  wrap("dir", printDir);
+  wrap("table", printTable);
+  wrap("trace", printTrace);
+  wrap("group", openPrintGroupSync.bind(openPrintGroupSync, console.log));
+  wrap("groupCollapsed", openPrintGroupSync.bind(openPrintGroupSync, console.log));
+  wrap("groupEnd", closePrintGroupSync.bind(closePrintGroupSync, console.log));
+  wrap("div", printDivider);
+  wrap("chunk", printChunkSync.bind(printArraySync, console.log));
+  wrap("array", printArraySync.bind(printArraySync, console.log));
 }
 
 export function getSpace(len: number) {
   return new Array(len).join(" ");
+}
+
+export function captureLog(logType: LogType, fn: Function) {
+  const priorLog = console[logType];
+  const messages: string[] = [];
+
+  console[logType] = (msg: string) => messages.push(msg);
+  fn();
+  console[logType] = priorLog;
+
+  return messages;
 }
 
 export function printLog(msg: any, ...params: any[]) {
@@ -415,6 +451,23 @@ export function printDebug(msg: any, ...params: any[]) {
   print(_debug, "debug", msg, ...params);
 }
 
+export function printDir(item: any, options: InspectOptions) {
+  print(_debug, "dir", util.inspect(item, options));
+}
+
+export function printTable(tabularData: any, properties?: readonly string[]) {
+  const messages = captureLog("log", () => _table(tabularData, properties));
+
+  return printArraySync(console.debug, messages[0].split("\n"));
+}
+
+export function printTrace(message?: any, ...optionalParams: any[]) {
+  const args = Array.from(arguments);
+  const messages = captureLog("error", () => _trace.apply(_trace, args));
+
+  return printArraySync(console.debug, messages[0].split("\n"));
+}
+
 export function printDivider(msg: any, ...params: any[]) {
   const context = getContext({ logType: "log" });
   const message = context.settings.formatters.divider(context, msg, ...params);
@@ -422,164 +475,142 @@ export function printDivider(msg: any, ...params: any[]) {
   printText(_log, "divider", message);
 }
 
-export async function openPrintGroup<T>(fn?: () => T | Promise<T>): Promise<T> {
+export async function openPrintGroup(fn: PrintFunction, ...data: string[]): Promise<void> {
   _isGroupStart = true;
   _printGroupPrefix = getSymbol("groupStart", "groupStart");
 
   pushGroup();
 
-  const ret = (await fn?.()) || undefined;
-  !fn && console.log("");
+  fn(...data);
 
   _groupLineNo++;
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupStart = false;
-
-  return ret;
 }
 
-export function openPrintGroupSync<T>(fn?: () => T): T {
+export function openPrintGroupSync(fn: PrintFunction, ...data: string[]): void {
   _isGroupStart = true;
   _printGroupPrefix = getSymbol("groupStart", "groupStart");
 
   pushGroup();
 
-  const ret = fn?.() || undefined;
-  !fn && console.log("");
+  fn(...data);
 
   _groupLineNo++;
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupStart = false;
-
-  return ret;
 }
 
-export async function closePrintGroup<T>(fn?: () => T): Promise<T> {
+export async function closePrintGroup(fn: PrintFunction, ...data: string[]): Promise<void> {
   _isGroupEnd = true;
   _printGroupPrefix = getSymbol("groupEnd", "groupEnd");
 
-  const ret = (await fn?.()) || undefined;
-  !fn && console.log("");
+  fn(...data);
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupEnd = false;
   popGroup();
-
-  return ret;
 }
 
-export function closePrintGroupSync<T>(fn?: () => T): T {
+export function closePrintGroupSync(fn: PrintFunction, ...data: string[]): void {
   _isGroupEnd = true;
   _printGroupPrefix = getSymbol("groupEnd", "groupEnd");
 
-  const ret = fn?.() || undefined;
-  !fn && console.log("");
+  fn(...data);
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
   _isGroupEnd = false;
   popGroup();
-
-  return ret;
 }
 
 export async function printStep<T = void>(stepName: string, stepFunction: () => T | Promise<T>): Promise<T> {
+  let context: CornsolContext;
   const start = Date.now();
 
-  await openPrintGroup(() => {
-    const context = getContext({ logType: "groupStart" });
-
-    return printInfo(_settings.formatters.stepStart(context, stepName));
-  });
+  context = getContext({ logType: "groupStart" });
+  await openPrintGroup(console.log, _settings.formatters.stepStart(context, stepName));
 
   const ret = await stepFunction();
   const end = Date.now();
 
-  await closePrintGroup(() => {
-    const context = getContext({ logType: "groupEnd" });
-
-    return printInfo(context.settings.formatters.stepEnd(context, stepName, end - start));
-  });
+  context = getContext({ logType: "groupEnd" });
+  await closePrintGroup(console.log, context.settings.formatters.stepEnd(context, stepName, end - start));
 
   return ret;
 }
 
 export function printStepSync<T = void>(stepName: string, stepFunction: () => T): T {
+  let context: CornsolContext;
   const start = Date.now();
 
-  openPrintGroupSync(() => {
-    const context = getContext({ logType: "groupStart" });
-
-    return printInfo(_settings.formatters.stepStart(context, stepName));
-  });
+  context = getContext({ logType: "groupStart" });
+  openPrintGroupSync(console.log, _settings.formatters.stepStart(context, stepName));
 
   const ret = stepFunction();
   const end = Date.now();
 
-  closePrintGroupSync(() => {
-    const context = getContext({ logType: "groupEnd" });
-
-    printInfo(context.settings.formatters.stepEnd(context, stepName, end - start));
-  });
+  context = getContext({ logType: "groupEnd" });
+  closePrintGroupSync(console.log, context.settings.formatters.stepEnd(context, stepName, end - start));
 
   return ret;
 }
 
 export async function printGroup<T = void>(
   stepFunction: () => T | Promise<T>,
-  open?: () => void | Promise<void>,
-  close?: () => void | Promise<void>
+  groupHeader?: string,
+  groupFooter?: string
 ): Promise<T> {
-  await openPrintGroup(open);
+  await openPrintGroup(console.log, groupHeader);
 
   const ret = await stepFunction();
 
-  await closePrintGroup(close);
+  await closePrintGroup(console.log, groupFooter);
 
   return ret;
 }
 
-export function printGroupSync<T = void>(stepFunction: () => T, open?: () => void, close?: () => void): T {
-  openPrintGroupSync(open);
+export function printGroupSync<T = void>(stepFunction: () => T, groupHeader?: string, groupFooter?: string): T {
+  openPrintGroupSync(console.log, groupHeader);
 
   const ret = stepFunction();
 
-  closePrintGroupSync(close);
+  closePrintGroupSync(console.log, groupFooter);
 
   return ret;
 }
 
-export async function printArray(fn: (msg: any, ...params: any[]) => void, messages: any[]): Promise<void> {
+export async function printArray(fn: PrintFunction, messages: any[]): Promise<void> {
   if (messages.length === 1) {
     fn(messages[0]);
   } else if (messages.length >= 2) {
-    await openPrintGroup(() => fn(messages[0]));
+    await openPrintGroup(messages[0]);
 
     for (let i = 1; i < messages.length - 1; i++) {
       fn(messages[i]);
     }
 
-    await closePrintGroup(() => fn(messages[messages.length - 1]));
+    await closePrintGroup(messages[messages.length - 1]);
   }
 }
 
-export function printBuffer(fn: (msg: any, ...params: any[]) => void, chunk: any): Promise<void> {
+export function printChunk(fn: PrintFunction, chunk: any): Promise<void> {
   return printArray(fn, Buffer.from(chunk).toString().trim().split("\n"));
 }
 
-export function printArraySync(fn: (msg: any, ...params: any[]) => void, messages: any[]): void {
+export function printArraySync(fn: PrintFunction, messages: any[]): void {
   if (messages.length === 1) {
     fn(messages[0]);
   } else {
-    openPrintGroupSync(() => fn(messages[0]));
+    openPrintGroupSync(fn, messages[0]);
 
     for (let i = 1; i < messages.length - 1; i++) {
       fn(messages[i]);
     }
 
-    closePrintGroupSync(() => fn(messages[messages.length - 1]));
+    closePrintGroupSync(fn, messages[messages.length - 1]);
   }
 }
 
-export function printBufferSync(fn: (msg: any, ...params: any[]) => void, chunk: any): void {
+export function printChunkSync(fn: PrintFunction, chunk: any): void {
   printArraySync(fn, Buffer.from(chunk).toString().trim().split("\n"));
 }

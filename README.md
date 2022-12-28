@@ -19,9 +19,10 @@ JavaScript console library.
 - [Cautions](#cautions)
 - [Usage](#usage)
   - [Register globally](#register-globally)
+  - [Function supports](#function-supports)
   - [Group](#group)
   - [Array](#array)
-  - [Buffer](#buffer)
+  - [Chunk](#chunk)
   - [Divider](#divider)
 - [Customizations](#customizations)
   - [Spinners](#spinners)
@@ -72,6 +73,26 @@ import * as corn from "cornsol";
 corn.register();
 ```
 
+### Function supports
+
+#### Overloads
+- log
+- debug
+- dir
+- info
+- warn
+- error
+- group
+- table
+- trace
+- groupCollapsed
+- groupEnd
+
+#### Extra features
+- div
+- array
+- chunk
+
 ### Group
 
 Example
@@ -85,14 +106,18 @@ corn.printGroupSync(
   () => {
     console.log("content");
   },
-  () => console.log("group start"),
-  () => console.log("group end")
+  "group start",
+  "group end"
 );
 
 // Open and close the group manually
-corn.openPrintGroupSync(() => console.log("group start"));
+console.group("group start");
 console.log("content");
-corn.closePrintGroupSync(() => console.log("close group"));
+console.groupEnd("close group");
+// or
+corn.openPrintGroupSync(console.log, "group start");
+console.log("content");
+corn.closePrintGroupSync(console.log, "close group");
 ```
 
 Result
@@ -116,6 +141,8 @@ const corn = require("cornsol");
 
 corn.register();
 
+console.array(["Item 1", "Item 2"]);
+// or
 corn.printArray(console.log, ["Item 1", "Item 2"]);
 ```
 
@@ -126,16 +153,18 @@ Result
         └ Item 2
 ```
 
-### Buffer
+### Chunk
 
 Example
 
 ```ts
-const { printBuffer } = require("cornsol");
+const { printChunk } = require("cornsol");
 const { exec } = require("child_process");
 
 const proc = exec("process_path");
 
+proc.stdout.on("data", console.chunk);
+// or
 proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
 
 // It works internally like
@@ -147,6 +176,12 @@ printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
 Example
 
 ```ts
+console.log("message 1");
+console.div("This is a divider");
+console.log("message 2");
+
+// or
+
 const { printDivider } = require("cornsol");
 
 console.log("message 1");
@@ -289,15 +324,11 @@ console.log(0);
 console.log(1);
 console.log(2);
 
-corn.printGroupSync(
-  () => {
-    console.log(1);
-    console.log(2);
-    console.log(3);
-  },
-  () => console.log(0),
-  () => console.log(4)
-);
+console.group(0);
+console.log(1);
+console.log(2);
+console.log(3);
+console.groupEnd(4);
 ```
 
 Result (small size terminal)
