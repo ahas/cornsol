@@ -58,21 +58,15 @@ function printBufferSync(fn: (msg: any, ...params: any[]) => void, chunk: any): 
 
 ### Register globally
 
-1. JavaScript
-
-```ts
+```js
 const corn = require("cornsol");
 
 corn.register();
+
+// Unregister
+corn.unregister();
 ```
 
-2. TypeScript
-
-```ts
-import * as corn from "cornsol";
-
-corn.register();
-```
 
 ### Function supports
 
