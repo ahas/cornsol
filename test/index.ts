@@ -3,7 +3,7 @@ import { exec } from "child_process";
 
 corn.register();
 
-corn.printDivider("color test");
+console.div("color test");
 
 console.log("Log");
 console.info("Information");
@@ -14,68 +14,69 @@ console.dir({ dir: 1 });
 console.table(Object.create({}));
 console.trace();
 
-corn.printDivider("printStep function test");
+console.div("printStep function test");
 
 (async () => {
-  await corn.printStep(
+  // Synchronous
+  const result = console.step("Step title", () => {
+    console.log("Process 1");
+    console.log("Process 2");
+
+    return 1;
+  });
+  console.log(result);
+
+  await console.step.async(
     "Processing",
-    () =>
-      new Promise<void>((resolve) => {
-        let counter = 0;
+    new Promise<void>((resolve) => {
+      let counter = 0;
+      console.log("Processing - %d", counter++);
+
+      const interval = setInterval(() => {
         console.log("Processing - %d", counter++);
 
-        const interval = setInterval(() => {
-          console.log("Processing - %d", counter++);
-
-          if (counter === 3) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, 2000);
-      })
+        if (counter === 3) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 2000);
+    })
   );
 
   const proc1 = exec("ls");
   proc1.stdout?.on("data", (chunk) => {
-    corn.printDivider("Print current directory files");
-    corn.printChunkSync(console.log, chunk);
-    corn.printDivider("done");
-  });
-
-  const proc2 = exec("ls -a");
-  proc2.stdout?.on("data", (chunk) => {
     console.div("Print current directory files");
     console.chunk(chunk);
     console.div("done");
   });
 
   // Print tree
-  corn.printDivider("Depth test");
-  corn.openPrintGroupSync(console.log, "depth 1 -- open");
-  console.log("Group content 1");
-  console.log("Group content 1");
-  corn.openPrintGroupSync(console.log, "depth 2 -- open");
-  console.log("Group content 2");
-  console.log("Group content 2");
-  console.log("Group content 2");
-  console.group("depth 3 -- open");
-  console.log("Group content 3");
-  corn.openPrintGroupSync(console.log, "depth 4 -- open");
-  console.log("Group content 4");
-  corn.closePrintGroupSync(console.log, "depth 4 -- close");
-  console.log("Group content 3");
-  console.groupEnd("depth 3 -- close");
-  console.log("Group content 2");
-  console.log("Group content 2");
-  corn.openPrintGroupSync(console.log, "depth 3 -- open");
-  console.log("Group content 3");
-  corn.closePrintGroupSync(console.log, "depth 3 -- close");
-  console.log("Group content 2");
-  corn.closePrintGroupSync(console.log, "depth 2 -- close");
-  console.log("Group content 1");
-  console.log("Group content 1");
-  corn.closePrintGroupSync(console.log, "depth 1 -- close");
-  console.div("Depth test -- done");
+  /**/ console.div("Depth test");
+  /**/ console.group("depth 1");
+  /*--*/ console.log("Group content 1");
+  /*--*/ console.log("Group content 1");
+  /*--*/ console.group("depth 2");
+  /*----*/ console.log("Group content 2");
+  /*----*/ console.log("Group content 2");
+  /*----*/ console.log("Group content 2");
+  /*----*/ console.group("depth 3");
+  /*------*/ console.log("Group content 3");
+  /*------*/ console.group("depth 4");
+  /*--------*/ console.log("Group content 4");
+  /*------*/ console.groupEnd("depth 4");
+  /*------*/ console.log("Group content 3");
+  /*----*/ console.groupEnd("depth 3");
+  /*----*/ console.log("Group content 2");
+  /*----*/ console.log("Group content 2");
+  /*----*/ console.group("depth 3");
+  /*------*/ console.log("Group content 3");
+  /*----*/ console.groupEnd("depth 3");
+  /*----*/ console.log("Group content 2");
+  /*--*/ console.groupEnd("depth 2");
+  /*--*/ console.log("Group content 1");
+  /*--*/ console.log("Group content 1");
+  /**/ console.groupEnd("depth 1");
+  /**/ console.div("Depth test -- done");
 
   // Print error
   console.log(new Error("Unexpected error").stack);
@@ -83,4 +84,5 @@ corn.printDivider("printStep function test");
 
   // Print array
   console.array([1, 2, 3]);
+  console.array.async([1, (async () => 2)(), (async () => 3)()]);
 })();

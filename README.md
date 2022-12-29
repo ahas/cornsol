@@ -22,6 +22,7 @@ JavaScript console library.
   - [Function supports](#function-supports)
   - [Group](#group)
   - [Array](#array)
+  - [Step](#step)
   - [Chunk](#chunk)
   - [Divider](#divider)
 - [Customizations](#customizations)
@@ -76,6 +77,7 @@ corn.register();
 ### Function supports
 
 #### Overloads
+
 - log
 - debug
 - dir
@@ -89,6 +91,7 @@ corn.register();
 - groupEnd
 
 #### Extra features
+
 - div
 - array
 - chunk
@@ -102,22 +105,14 @@ const corn = require("cornsol");
 
 corn.register();
 
-corn.printGroupSync(
-  () => {
-    console.log("content");
-  },
-  "group start",
-  "group end"
-);
-
 // Open and close the group manually
 console.group("group start");
 console.log("content");
 console.groupEnd("close group");
 // or
-corn.openPrintGroupSync(console.log, "group start");
+corn.openPrintGroup(console.log, "group start");
 console.log("content");
-corn.closePrintGroupSync(console.log, "close group");
+corn.closePrintGroup(console.log, "close group");
 ```
 
 Result
@@ -141,9 +136,15 @@ const corn = require("cornsol");
 
 corn.register();
 
+// Synchronous
 console.array(["Item 1", "Item 2"]);
 // or
-corn.printArray(console.log, ["Item 1", "Item 2"]);
+corn.printArraySync(console.log, ["Item 1", "Item 2"]);
+
+// Asynchronous
+console.array.async(["Item 1", (async () => "Item 2")()]);
+// or
+corn.printArray(console.log, ["Item 1", (async () => "Item 2")()]);
 ```
 
 Result
@@ -153,22 +154,86 @@ Result
         └ Item 2
 ```
 
+### Step
+
+Example
+
+```ts
+const corn = require("cornsol");
+
+corn.register();
+
+// Synchronous
+const result = console.step("Step title", () => {
+  console.log("Process 1");
+  console.log("Process 2");
+
+  return 1;
+});
+// or
+const result = corn.printStepSync("Step title", () => {
+  // ...
+});
+
+// Asynchronous
+const result = console.step.async("Step title", () => {
+  // ...
+});
+const result = corn.printStep("Step title", () => {
+  // ...
+});
+
+console.log(result);
+```
+
+Result
+
+```bash
+➤ 0000: ┌ Step title step
+        │ Process 1
+        │ Process 2
+        └ Completed in 0s
+➤ 0001: ─ 1
+```
+
 ### Chunk
 
 Example
 
 ```ts
-const { printChunk } = require("cornsol");
+const corn = require("cornsol");
 const { exec } = require("child_process");
 
-const proc = exec("process_path");
+const proc = exec("ls");
 
+corn.register();
+
+// Synchronous
 proc.stdout.on("data", console.chunk);
 // or
-proc.stdout.on("data", (chunk) => printBuffer(console.log, chunk));
+proc.stdout.on("data", (chunk) => corn.printChunkSync(console.log, chunk));
+
+// Asynchronous
+proc.stdout.on("data", console.chunk.async);
+// or
+proc.stdout.on("data", (chunk) => corn.printChunk(console.log, chunk));
 
 // It works internally like
-printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
+corn.printArray(console.log, Buffer.from(chunk).toString().trim().split("\n"));
+```
+
+Result
+
+```bash
+➤ 0000: ┌ dist
+        │ LICENSE
+        │ node_modules
+        │ package.json
+        │ README.md
+        │ src
+        │ test
+        │ tsconfig.json
+        └ yarn.lock
 ```
 
 ### Divider

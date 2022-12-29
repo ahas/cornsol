@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import util, { InspectOptions } from "util";
 import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType, PrintFunction } from "./types";
-import { groupCollapsed } from "console";
 
 export const spinners = [
   "⣾⣽⣻⢿⡿⣟⣯⣷",
@@ -56,10 +55,10 @@ export const plain = {
 const _groupStack: PrintGroupStack[] = [];
 
 let _lineNo = 0;
-let _groupLineNo = 0;
-let _isGroupStart = false;
-let _isGroupEnd = false;
-let _groupDepth = 0;
+let _isPrintGroupStart = false;
+let _isPrintGroupEnd = false;
+let _printGroupLineNo = 0;
+let _printGroupDepth = 0;
 let _printGroupPrefix = "";
 let _spinnerIndex = 0;
 let _spinnerInterval: NodeJS.Timeout = null;
@@ -74,9 +73,9 @@ let _settings: CornsolSettings = {
     groupStart: ["green"],
     groupLine: [],
     groupEnd: ["blue"],
-    internalGroupStart: ["green"],
-    internalGroupLine: [],
-    internalGroupEnd: ["blue"],
+    nestedGroupStart: ["green"],
+    nestedGroupLine: [],
+    nestedGroupEnd: ["blue"],
     info: ["blue"],
     start: ["green"],
     error: ["red"],
@@ -92,9 +91,9 @@ let _settings: CornsolSettings = {
     groupStart: "┌",
     groupLine: "│",
     groupEnd: "└",
-    internalGroupStart: "├─┬",
-    internalGroupLine: "│ │",
-    internalGroupEnd: "│ └",
+    nestedGroupStart: "├─┬",
+    nestedGroupLine: "│ │",
+    nestedGroupEnd: "│ └",
     singleLine: "─",
     newLine: "↳",
     divider: "─",
@@ -104,7 +103,7 @@ let _settings: CornsolSettings = {
     labelSpace(context) {
       const lineNoText = context.settings.formatters.lineNumber(context);
       const groupSymbol = getGroupSymbol(context);
-      const lineIcon = _groupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
+      const lineIcon = _printGroupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
       const prefix = getSpace(lineNoText.length + 3);
 
       return getSpace(`${prefix} ${context.settings.spinner.isActive ? " " : lineIcon}`.length + 1);
@@ -114,19 +113,19 @@ let _settings: CornsolSettings = {
       let groupSymbol: string = "";
 
       if (!context.settings.spinner.isActive) {
-        if (_groupDepth > 1) {
+        if (_printGroupDepth > 1) {
           groupSymbol = appendGroupLine(groupSymbol);
           const groupLineSymbol = getSymbol("groupLine", "groupLine");
-          const groupInternalLineSymbol = getSymbol("internalGroupLine", "internalGroupLine");
+          const groupNestedLineSymbol = getSymbol("nestedGroupLine", "nestedGroupLine");
 
-          if (_isGroupEnd) {
+          if (_isPrintGroupEnd) {
             groupSymbol +=
               getSymbol("groupLine", "groupLine") +
-              new Array(groupInternalLineSymbol.length - groupLineSymbol.length).join(" ");
-          } else if (!_isGroupEnd) {
-            groupSymbol += getSymbol("internalGroupLine", "internalGroupLine");
+              new Array(groupNestedLineSymbol.length - groupLineSymbol.length).join(" ");
+          } else if (!_isPrintGroupEnd) {
+            groupSymbol += getSymbol("nestedGroupLine", "nestedGroupLine");
           }
-        } else if (!_isGroupEnd) {
+        } else if (!_isPrintGroupEnd) {
           groupSymbol += getSymbol("groupLine", "groupLine");
         }
       } else {
@@ -139,10 +138,10 @@ let _settings: CornsolSettings = {
       const prefixSymbol = getSymbol("prefix", context.logType);
       const lineNoText = context.settings.formatters.lineNumber(context);
       const groupSymbol = getGroupSymbol(context);
-      const lineSymbol = _groupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
+      const lineSymbol = _printGroupDepth > 0 ? groupSymbol : getSymbol("singleLine", context.logType);
       let prefix: string;
 
-      if (_groupDepth > 0 && _groupLineNo >= 1) {
+      if (_printGroupDepth > 0 && _printGroupLineNo >= 1) {
         prefix = getSpace(lineNoText.length + 3);
       } else {
         prefix = `${prefixSymbol} ${lineNoText}`;
@@ -170,28 +169,28 @@ let _settings: CornsolSettings = {
 // private functions
 function pushGroup() {
   _groupStack.push({
-    lineNo: _groupLineNo,
+    lineNo: _printGroupLineNo,
     prefix: _printGroupPrefix,
-    depth: _groupDepth,
+    depth: _printGroupDepth,
   });
 
-  _groupLineNo = 0;
-  _groupDepth++;
+  _printGroupLineNo = 0;
+  _printGroupDepth++;
 }
 
 function popGroup() {
   const stack = _groupStack.pop();
 
   if (stack) {
-    _groupLineNo = stack.lineNo;
+    _printGroupLineNo = stack.lineNo;
     _printGroupPrefix = stack.prefix;
-    _groupDepth = stack.depth;
+    _printGroupDepth = stack.depth;
   }
 }
 
 function appendGroupLine(groupSymbol: string): string {
-  for (let i = 0; i < _groupDepth - 2; i++) {
-    const symbol = getSymbol("internalGroupLine", "internalGroupLine");
+  for (let i = 0; i < _printGroupDepth - 2; i++) {
+    const symbol = getSymbol("nestedGroupLine", "nestedGroupLine");
     groupSymbol += symbol.substring(0, symbol.length - 1);
   }
 
@@ -203,27 +202,27 @@ function getGroupSymbol(context: CornsolContext): string {
 
   if (context.settings.spinner.isActive) {
     groupSymbol = context.settings.spinner.symbols[_spinnerIndex];
-  } else if (_isGroupStart) {
+  } else if (_isPrintGroupStart) {
     groupSymbol = appendGroupLine(groupSymbol);
 
-    if (_groupDepth > 1) {
-      groupSymbol += getSymbol("internalGroupStart", "internalGroupStart");
+    if (_printGroupDepth > 1) {
+      groupSymbol += getSymbol("nestedGroupStart", "nestedGroupStart");
     } else {
       groupSymbol += getSymbol("groupStart", "groupStart");
     }
-  } else if (_isGroupEnd) {
+  } else if (_isPrintGroupEnd) {
     groupSymbol = appendGroupLine(groupSymbol);
 
-    if (_groupDepth > 1) {
-      groupSymbol += getSymbol("internalGroupEnd", "internalGroupEnd");
+    if (_printGroupDepth > 1) {
+      groupSymbol += getSymbol("nestedGroupEnd", "nestedGroupEnd");
     } else {
       groupSymbol += getSymbol("groupEnd", "groupEnd");
     }
   } else {
     groupSymbol = appendGroupLine(groupSymbol);
 
-    if (_groupDepth > 1) {
-      groupSymbol += getSymbol("internalGroupLine", "internalGroupLine");
+    if (_printGroupDepth > 1) {
+      groupSymbol += getSymbol("nestedGroupLine", "nestedGroupLine");
     } else {
       groupSymbol += getSymbol("groupLine", "groupLine");
     }
@@ -233,10 +232,10 @@ function getGroupSymbol(context: CornsolContext): string {
 }
 
 function increaseLineNo() {
-  if (_groupDepth === 0 || _isGroupStart) {
+  if (_printGroupDepth === 0 || _isPrintGroupStart) {
     _lineNo++;
   } else {
-    _groupLineNo++;
+    _printGroupLineNo++;
   }
 }
 
@@ -292,7 +291,7 @@ function splitMessage(context: CornsolContext, label: string, msg: any, ...param
     const line = messages[i];
     let label: string;
 
-    if (_groupDepth > 0) {
+    if (_printGroupDepth > 0) {
       label = context.settings.formatters.groupNewLineSpace(context);
     } else {
       label = context.settings.formatters.labelSpace(context);
@@ -354,7 +353,7 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
 function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
   _settings.spinner.isActive && removeSpinner();
 
-  if (_groupDepth > 0 && _groupLineNo > 0 && !_isGroupEnd) {
+  if (_printGroupDepth > 0 && _printGroupLineNo > 0 && !_isPrintGroupEnd) {
     initSpinner(_settings.formatters.print(getContext({ logType }), msg, ...params));
     updateSpinner(logType, msg, ...params);
     _spinnerInterval = setInterval(() => updateSpinner(logType, msg, ...params), 100);
@@ -367,7 +366,7 @@ function print(fn: Function, logType: LogType, msg: any, ...params: any[]) {
 function printText(fn: Function, logType: LogType, text: string) {
   _settings.spinner.isActive && removeSpinner();
 
-  if (_groupDepth > 0 && _groupLineNo > 0 && !_isGroupEnd) {
+  if (_printGroupDepth > 0 && _printGroupLineNo > 0 && !_isPrintGroupEnd) {
     initSpinner(text);
     updateSpinner(logType, text);
     _spinnerInterval = setInterval(() => updateSpinner(logType, text), 100);
@@ -387,6 +386,13 @@ export function configure(settings: CornsolSettings) {
   }
 }
 
+function getSyncAsyncFunction(syncFunction: Function, asyncFunction: Function) {
+  syncFunction = syncFunction;
+  (syncFunction as any).async = asyncFunction;
+
+  return syncFunction;
+}
+
 export function register() {
   const wrap = (funcName: string, alternative: Function) => {
     (console as any)[funcName] = alternative;
@@ -400,12 +406,19 @@ export function register() {
   wrap("dir", printDir);
   wrap("table", printTable);
   wrap("trace", printTrace);
-  wrap("group", openPrintGroupSync.bind(openPrintGroupSync, console.log));
-  wrap("groupCollapsed", openPrintGroupSync.bind(openPrintGroupSync, console.log));
-  wrap("groupEnd", closePrintGroupSync.bind(closePrintGroupSync, console.log));
+  wrap("group", openPrintGroup.bind(openPrintGroup, console.log));
+  wrap("groupCollapsed", openPrintGroup.bind(openPrintGroup, console.log));
+  wrap("groupEnd", closePrintGroup.bind(closePrintGroup, console.log));
   wrap("div", printDivider);
-  wrap("chunk", printChunkSync.bind(printArraySync, console.log));
-  wrap("array", printArraySync.bind(printArraySync, console.log));
+  wrap(
+    "chunk",
+    getSyncAsyncFunction(printChunkSync.bind(printChunkSync, console.log), printChunk.bind(printChunk, console.log))
+  );
+  wrap(
+    "array",
+    getSyncAsyncFunction(printArraySync.bind(printArraySync, console.log), printArray.bind(printArray, console.log))
+  );
+  wrap("step", getSyncAsyncFunction(printStepSync, printStep));
 }
 
 export function getSpace(len: number) {
@@ -475,106 +488,66 @@ export function printDivider(msg: any, ...params: any[]) {
   printText(_log, "divider", message);
 }
 
-export async function openPrintGroup(fn: PrintFunction, ...data: string[]): Promise<void> {
-  _isGroupStart = true;
+export function openPrintGroup(fn: PrintFunction, ...data: string[]): void {
+  _isPrintGroupStart = true;
   _printGroupPrefix = getSymbol("groupStart", "groupStart");
 
   pushGroup();
 
   fn(...data);
 
-  _groupLineNo++;
+  _printGroupLineNo++;
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupStart = false;
+  _isPrintGroupStart = false;
 }
 
-export function openPrintGroupSync(fn: PrintFunction, ...data: string[]): void {
-  _isGroupStart = true;
-  _printGroupPrefix = getSymbol("groupStart", "groupStart");
-
-  pushGroup();
-
-  fn(...data);
-
-  _groupLineNo++;
-  _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupStart = false;
-}
-
-export async function closePrintGroup(fn: PrintFunction, ...data: string[]): Promise<void> {
-  _isGroupEnd = true;
+export function closePrintGroup(fn: PrintFunction, ...data: string[]) {
+  _isPrintGroupEnd = true;
   _printGroupPrefix = getSymbol("groupEnd", "groupEnd");
 
   fn(...data);
 
   _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupEnd = false;
+  _isPrintGroupEnd = false;
   popGroup();
 }
 
-export function closePrintGroupSync(fn: PrintFunction, ...data: string[]): void {
-  _isGroupEnd = true;
-  _printGroupPrefix = getSymbol("groupEnd", "groupEnd");
+async function awaitGetOrCall<T>(promise: Promise<T> | (() => Promise<T>)) {
+  if (typeof promise === "function") {
+    return await promise();
+  }
 
-  fn(...data);
-
-  _printGroupPrefix = getSymbol("groupLine", "groupLine");
-  _isGroupEnd = false;
-  popGroup();
+  return await promise;
 }
 
-export async function printStep<T = void>(stepName: string, stepFunction: () => T | Promise<T>): Promise<T> {
+export async function printStep<T = void>(title: string, work: Promise<T> | (() => Promise<T>)): Promise<T> {
   let context: CornsolContext;
   const start = Date.now();
 
   context = getContext({ logType: "groupStart" });
-  await openPrintGroup(console.log, _settings.formatters.stepStart(context, stepName));
+  openPrintGroup(console.log, _settings.formatters.stepStart(context, title));
 
-  const ret = await stepFunction();
+  const ret = await await awaitGetOrCall<T>(work);
   const end = Date.now();
 
   context = getContext({ logType: "groupEnd" });
-  await closePrintGroup(console.log, context.settings.formatters.stepEnd(context, stepName, end - start));
+  closePrintGroup(console.log, context.settings.formatters.stepEnd(context, title, end - start));
 
   return ret;
 }
 
-export function printStepSync<T = void>(stepName: string, stepFunction: () => T): T {
+export function printStepSync<T = void>(title: string, stepFunction: () => T): T {
   let context: CornsolContext;
   const start = Date.now();
 
   context = getContext({ logType: "groupStart" });
-  openPrintGroupSync(console.log, _settings.formatters.stepStart(context, stepName));
+  openPrintGroup(console.log, _settings.formatters.stepStart(context, title));
 
   const ret = stepFunction();
   const end = Date.now();
 
   context = getContext({ logType: "groupEnd" });
-  closePrintGroupSync(console.log, context.settings.formatters.stepEnd(context, stepName, end - start));
-
-  return ret;
-}
-
-export async function printGroup<T = void>(
-  stepFunction: () => T | Promise<T>,
-  groupHeader?: string,
-  groupFooter?: string
-): Promise<T> {
-  await openPrintGroup(console.log, groupHeader);
-
-  const ret = await stepFunction();
-
-  await closePrintGroup(console.log, groupFooter);
-
-  return ret;
-}
-
-export function printGroupSync<T = void>(stepFunction: () => T, groupHeader?: string, groupFooter?: string): T {
-  openPrintGroupSync(console.log, groupHeader);
-
-  const ret = stepFunction();
-
-  closePrintGroupSync(console.log, groupFooter);
+  closePrintGroup(console.log, context.settings.formatters.stepEnd(context, title, end - start));
 
   return ret;
 }
@@ -583,32 +556,32 @@ export async function printArray(fn: PrintFunction, messages: any[]): Promise<vo
   if (messages.length === 1) {
     fn(messages[0]);
   } else if (messages.length >= 2) {
-    await openPrintGroup(messages[0]);
+    openPrintGroup(fn, await messages[0]);
 
     for (let i = 1; i < messages.length - 1; i++) {
-      fn(messages[i]);
+      fn(await messages[i]);
     }
 
-    await closePrintGroup(messages[messages.length - 1]);
+    closePrintGroup(fn, await messages[messages.length - 1]);
   }
-}
-
-export function printChunk(fn: PrintFunction, chunk: any): Promise<void> {
-  return printArray(fn, Buffer.from(chunk).toString().trim().split("\n"));
 }
 
 export function printArraySync(fn: PrintFunction, messages: any[]): void {
   if (messages.length === 1) {
     fn(messages[0]);
   } else {
-    openPrintGroupSync(fn, messages[0]);
+    openPrintGroup(fn, messages[0]);
 
     for (let i = 1; i < messages.length - 1; i++) {
       fn(messages[i]);
     }
 
-    closePrintGroupSync(fn, messages[messages.length - 1]);
+    closePrintGroup(fn, messages[messages.length - 1]);
   }
+}
+
+export function printChunk(fn: PrintFunction, chunk: any): Promise<void> {
+  return printArray(fn, Buffer.from(chunk).toString().trim().split("\n"));
 }
 
 export function printChunkSync(fn: PrintFunction, chunk: any): void {
