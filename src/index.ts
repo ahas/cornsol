@@ -393,32 +393,50 @@ function getSyncAsyncFunction(syncFunction: Function, asyncFunction: Function) {
   return syncFunction;
 }
 
-export function register() {
-  const wrap = (funcName: string, alternative: Function) => {
-    (console as any)[funcName] = alternative;
-  };
+function setConsoleFunction(funcName: string, alternative: Function) {
+  (console as any)[funcName] = alternative;
+}
 
-  wrap("log", printLog);
-  wrap("info", printInfo);
-  wrap("error", printError);
-  wrap("warn", printWarn);
-  wrap("debug", printDebug);
-  wrap("dir", printDir);
-  wrap("table", printTable);
-  wrap("trace", printTrace);
-  wrap("group", openPrintGroup.bind(openPrintGroup, console.log));
-  wrap("groupCollapsed", openPrintGroup.bind(openPrintGroup, console.log));
-  wrap("groupEnd", closePrintGroup.bind(closePrintGroup, console.log));
-  wrap("div", printDivider);
-  wrap(
+export function register() {
+  setConsoleFunction("log", printLog);
+  setConsoleFunction("info", printInfo);
+  setConsoleFunction("error", printError);
+  setConsoleFunction("warn", printWarn);
+  setConsoleFunction("debug", printDebug);
+  setConsoleFunction("dir", printDir);
+  setConsoleFunction("table", printTable);
+  setConsoleFunction("trace", printTrace);
+  setConsoleFunction("group", openPrintGroup.bind(openPrintGroup, console.log));
+  setConsoleFunction("groupCollapsed", openPrintGroup.bind(openPrintGroup, console.log));
+  setConsoleFunction("groupEnd", closePrintGroup.bind(closePrintGroup, console.log));
+  setConsoleFunction("div", printDivider);
+  setConsoleFunction(
     "chunk",
     getSyncAsyncFunction(printChunkSync.bind(printChunkSync, console.log), printChunk.bind(printChunk, console.log))
   );
-  wrap(
+  setConsoleFunction(
     "array",
     getSyncAsyncFunction(printArraySync.bind(printArraySync, console.log), printArray.bind(printArray, console.log))
   );
-  wrap("step", getSyncAsyncFunction(printStepSync, printStep));
+  setConsoleFunction("step", getSyncAsyncFunction(printStepSync, printStep));
+}
+
+export function unregister() {
+  setConsoleFunction("log", _log);
+  setConsoleFunction("info", _info);
+  setConsoleFunction("error", _error);
+  setConsoleFunction("warn", _warn);
+  setConsoleFunction("debug", _debug);
+  setConsoleFunction("dir", _dir);
+  setConsoleFunction("table", _table);
+  setConsoleFunction("trace", _trace);
+  setConsoleFunction("group", _group);
+  setConsoleFunction("groupCollapsed", _groupCollapsed);
+  setConsoleFunction("groupEnd", _groupEnd);
+  delete console["div"];
+  delete console["chunk"];
+  delete console["array"];
+  delete console["step"];
 }
 
 export function getSpace(len: number) {

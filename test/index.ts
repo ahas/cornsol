@@ -11,7 +11,7 @@ console.error("Error message");
 console.warn("Warning");
 console.debug("Debugging");
 console.dir({ dir: 1 });
-console.table(Object.create({}));
+console.table({ a: 1, b: 2, c: 3 });
 console.trace();
 
 console.div("printStep function test");
