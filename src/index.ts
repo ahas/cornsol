@@ -530,7 +530,7 @@ export function closePrintGroup(fn: PrintFunction, ...data: string[]) {
   popGroup();
 }
 
-async function awaitGetOrCall<T>(promise: Promise<T> | (() => Promise<T>)) {
+async function awaitGetOrCall<T>(promise: Promise<T> | (() => Promise<T>) | (() => T)): Promise<T> {
   if (typeof promise === "function") {
     return await promise();
   }
@@ -538,7 +538,10 @@ async function awaitGetOrCall<T>(promise: Promise<T> | (() => Promise<T>)) {
   return await promise;
 }
 
-export async function printStep<T = void>(title: string, work: Promise<T> | (() => Promise<T>)): Promise<T> {
+export async function printStep<T = void>(
+  title: string,
+  work: Promise<T> | (() => Promise<T>) | (() => T)
+): Promise<T> {
   let context: CornsolContext;
   const start = Date.now();
 
