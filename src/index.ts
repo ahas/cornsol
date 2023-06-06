@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import util, { InspectOptions } from "util";
+import readline from "readline";
 import type { CornsolSettings, CornsolContext, PrintGroupStack, LogType, SymbolType, PrintFunction } from "./types";
 
 export const spinners = [
@@ -317,8 +318,8 @@ function removeSpinner() {
   _settings.spinner.isActive = false;
 
   for (let i = 0; i < lines.length; i++) {
-    process.stdout.moveCursor(0, -1);
-    process.stdout.clearLine(0);
+    readline.moveCursor(process.stdout, 0, -1);
+    readline.clearLine(process.stdout, 0);
   }
 
   process.stdout.write(_lastPrintText + "\n");
@@ -337,8 +338,8 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
     const lines = text.split("\n");
 
     for (let i = 0; i < lines.length; i++) {
-      process.stdout.moveCursor(0, -1);
-      process.stdout.clearLine(0);
+      readline.moveCursor(process.stdout, 0, -1);
+      readline.clearLine(process.stdout, 0);
     }
   }
 
@@ -346,7 +347,7 @@ function updateSpinner(logType: LogType, msg: any, ...params: any[]) {
     _spinnerIndex = 0;
   }
 
-  process.stdout.cursorTo(0);
+  readline.cursorTo(process.stdout, 0);
   process.stdout.write(text + "\n");
 }
 
